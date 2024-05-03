@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "370105776817",
+    "project_id": "pingo-2dacb",
+    "storage_bucket": "pingo-2dacb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:370105776817:android:12cde7635d74157e6a4090",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDMTcDYigrunT25I9iuLmwdA9kfLTat4BE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
