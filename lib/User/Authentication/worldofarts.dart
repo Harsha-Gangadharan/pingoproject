@@ -144,7 +144,7 @@ class _WorldofartsState extends State<Worldofarts> {
               ),
               ElevatedButton(
                 onPressed: () {
-                 Navigator.push(context,MaterialPageRoute(builder: (context) => packages(indexnum: 0,),));
+                 Navigator.push(context,MaterialPageRoute(builder: (context) => Packages(indexNum: 0,),));
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color.fromARGB(142, 123, 120, 121),

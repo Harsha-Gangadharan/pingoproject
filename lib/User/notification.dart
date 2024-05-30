@@ -93,37 +93,7 @@ int _selectedIndex = 0;
           ),
         ],
       ),
-       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.black,
-        selectedLabelStyle: const TextStyle(color: Colors.black),
-        currentIndex: _selectedIndex,
-        onTap: (int index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            label: "Search",
-            icon: Icon(Icons.search, color: Color.fromARGB(255, 12, 12, 12)),
-          ),
-          BottomNavigationBarItem(
-            label: "Upload",
-            icon: Icon(Icons.add_box, color: Colors.black),
-          ),
-          BottomNavigationBarItem(
-            label: "Order",
-            icon: Icon(Icons.card_giftcard,
-                color: Color.fromARGB(255, 12, 12, 12)),
-          ),
-          BottomNavigationBarItem(
-            label: "Profile",
-            icon: Icon(Icons.account_circle,
-                color: Color.fromARGB(255, 12, 12, 12)),
-          ),
-        ]
-       ),
+     
     );
   }
 }

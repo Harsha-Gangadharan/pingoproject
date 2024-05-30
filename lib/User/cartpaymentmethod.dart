@@ -1,18 +1,28 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/User/cartsummery.dart';
+import 'package:flutter_application_1/User/paymentmethod.dart';
+import 'package:flutter_application_1/User/paymentpage.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:upi_india/upi_india.dart';
 
 class CartPayment extends StatefulWidget {
+  double totalPay;
+  CartPayment({  required this.totalPay});
   @override
   _CartPaymentState createState() => _CartPaymentState();
 }
 
 class _CartPaymentState extends State<CartPayment> {
   int _paymentMethod = 0;
-  
+    int selectedOption = 0; 
+
   // 0 for pay online, 1 for cash on delivery
 
   @override
   Widget build(BuildContext context) {
+   
   var list = <Widget>[
     CircleAvatar(
       backgroundColor: Colors.white,
@@ -42,6 +52,8 @@ class _CartPaymentState extends State<CartPayment> {
       
       body: Column(
         children: [
+          
+
           SizedBox(height: 20,),
           CustomPaint(
             size: Size(MediaQuery.of(context).size.width, 100),
@@ -60,55 +72,52 @@ class _CartPaymentState extends State<CartPayment> {
               Text('Summary'),
             ],
           ),
-          SizedBox(height: 80,),
-          ListTile(
-            title: Text('Pay Online'),
-            leading: Radio(
-              value: 1,
-              groupValue: _paymentMethod,
-              onChanged: (value) {
-                setState(() {
-                  _paymentMethod = value!;
-                });
-              },
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset(
-                  'asset/gpay.png',
-                  width: 30,
-                  height: 30,
-                ),
-                SizedBox(width: 10),
-                Image.asset(
-                  'asset/phonepay.png',
-                  width: 30,
-                  height: 30,
-                ),
-                SizedBox(width: 10),
-                Image.asset(
-                  'asset/paytm.png',
-                  width: 30,
-                  height: 30,
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            trailing: Icon(Icons.location_on),
-            title: Text('Cash on Delivery'),
-            leading: Radio(
-              value: 2,
-              groupValue: _paymentMethod,
-              onChanged: (value) {
-                setState(() {
-                  _paymentMethod = value!;
-                });
-              },
-            ),
-          ),
+
+          
           Divider(),
+          SizedBox(height: 20,),
+          PaymentOption(
+                      title: "Wallet/UPI",
+                      selected: selectedOption == 0,
+                      onTap: () {
+log(widget.totalPay.toString());
+                        showModalBottomSheet(
+                          showDragHandle: true,
+                          context: context, builder: (context) =>ShowPaymentoptions(totalAMount: widget.totalPay,),);
+                      //   setState(() {
+                      //     selectedOption = 0;
+                      //   });
+                      //   paymentController.initiateTransaction(
+                      //     price: widget.totalPay,
+                      //     receiverName: "logitrack",
+                      //   );
+                      },
+                    ),
+          // FutureBuilder<UpiApp>(
+          //       future: paymentController.appOpen(),
+          //       builder: (context, snapshot) {
+          //         if (snapshot.connectionState == ConnectionState.waiting) {
+          //           return const Center(child: CircularProgressIndicator());
+          //         } else if (snapshot.hasError) {
+          //           return Center(child: Text('Error: ${snapshot.error}'));
+          //         } else if (!snapshot.hasData) {
+          //           return const Center(child: Text('No UPI app found'));
+          //         } else {
+          //           return 
+                    
+          //         }
+          //       },
+          //     ),
+              const SizedBox(height: 25),
+              PaymentOption(
+                title: "Cash on delivery",
+                selected: selectedOption == 2,
+                onTap: () {
+                  setState(() {
+                    selectedOption=2;
+                  });
+                },
+              ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 0.0),
             child: Row(
@@ -133,7 +142,13 @@ class _CartPaymentState extends State<CartPayment> {
             child: SizedBox(
               height: 50.0,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () { 
+                      // PaymentController().create(widget.totalPay);
+                  // Navigator.push(
+                  //             context,
+                  //             MaterialPageRoute(builder: (context) => CartSummery()),
+                  //           );
+                            },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 195, 60, 105),
                 ),
@@ -188,5 +203,51 @@ class CircleLinePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return false;
+  }
+}
+
+
+class PaymentOption extends StatelessWidget {
+  final String title;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const PaymentOption({
+    Key? key,
+    required this.title,
+    required this.selected,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        height: 60,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: selected ? Colors.pink : Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: selected ? Colors.transparent : Colors.grey),
+        ),
+        child: TextButton(
+          onPressed: onTap,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.inder(color: selected ? Colors.white : Colors.black),
+              ),
+              Icon(
+                selected ? Icons.check_circle : Icons.circle_outlined,
+                color: selected ? Colors.white : Colors.grey,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/User/orderconfirmed.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class CartSummery extends StatefulWidget {
@@ -9,7 +11,27 @@ class CartSummery extends StatefulWidget {
 }
 
 class _CartSummeryState extends State<CartSummery> {
-  int quantity = 0;
+  List<DocumentSnapshot> cartItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCartItems();
+  }
+
+  Future<void> fetchCartItems() async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    QuerySnapshot snapshot = await firestore.collection('cart').get();
+    setState(() {
+      cartItems = snapshot.docs;
+    });
+  }
+
+  Future<Map<String, dynamic>?> getSellerDetails(String uid) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    DocumentSnapshot sellerSnapshot = await firestore.collection('useregisteration').doc(uid).get();
+    return sellerSnapshot.data() as Map<String, dynamic>?;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +44,10 @@ class _CartSummeryState extends State<CartSummery> {
         backgroundColor: Colors.white,
         child: Icon(Icons.check, color: Colors.green),
       ),
-       CircleAvatar(
+      CircleAvatar(
         backgroundColor: Colors.white,
         child: Icon(Icons.check, color: Colors.green),
       ),
-      
       CircleAvatar(child: Text('4')),
     ];
 
@@ -48,110 +69,136 @@ class _CartSummeryState extends State<CartSummery> {
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children:  [
-          SizedBox(height: 20,),
-          CustomPaint(
-            size: Size(MediaQuery.of(context).size.width, 100),
-            painter: CircleLinePainter(),
-            child: Row(
+          children: [
+            SizedBox(height: 20),
+            CustomPaint(
+              size: Size(MediaQuery.of(context).size.width, 100),
+              painter: CircleLinePainter(),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: list,
+              ),
+            ),
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: list,
+              children: [
+                Text('Cart'),
+                Text('Address'),
+                Text('Payment'),
+                Text('Summary'),
+              ],
             ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Cart'),
-              Text('Address'),
-              Text('Payment'),
-              Text('Summary'),
-            ],
-          ),
             // Product details section
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            ...cartItems.map((item) {
+              var data = item.data() as Map<String, dynamic>;
+              return FutureBuilder<Map<String, dynamic>?>(
+                future: getSellerDetails(data['uid']),
+                builder: (context, snapshot) {
+                  var sellerData = snapshot.data;
+                  return Column(
                     children: [
-                      Text(
-                        'Art Name',
-                        style: const TextStyle(fontSize: 18.0),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  data['description'] ?? '',
+                                  style: const TextStyle(fontSize: 18.0),
+                                ),
+                                SizedBox(height: 10), // Add a small space
+                                Container(
+                                  width: 50, // Adjust the width as needed
+                                  height: 50, // Adjust the height as needed
+                                  color: Colors.grey[400], // Color of the container
+                                  child: Image.network(
+                                    data['productimage'] ?? "https://via.placeholder.com/150",
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text('₹${data['amount'] ?? 0}'),
+                          ],
+                        ),
                       ),
-                      SizedBox(height: 10), // Add a small space
-                      Container(
-                        width: 50, // Adjust the width as needed
-                        height: 50, // Adjust the height as needed
-                        color: Colors.grey[400], // Color of the container
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
+                        child: Row(
+                          children: [
+                            const Text('Size:'),
+                            Text(
+                              'Free size',
+                              style: TextStyle(color: Colors.grey[700]),
+                            ),
+                          ],
+                        ),
                       ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      if (data['qty'] > 0) data['qty'] -= 1;
+                                    });
+                                  },
+                                  icon: const Icon(Icons.remove_circle),
+                                ),
+                                Text('${data['qty'] ?? 0}'),
+                                IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      data['qty'] += 1;
+                                    });
+                                  },
+                                  icon: const Icon(Icons.add_circle),
+                                ),
+                              ],
+                            ),
+                            TextButton(
+                              onPressed: () {},
+                              child: const Text('Remove'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundImage: NetworkImage(sellerData?["image"] ?? "https://via.placeholder.com/150"),
+                            ),
+                            SizedBox(width: 10),
+                            const Text('Sold by:'),
+                            Text(sellerData?['name'] ?? 'Loading...'),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
+                        child: Row(
+                          children: const [
+                            Text('free delivery'),
+                          ],
+                        ),
+                      ),
+                      Divider(),
                     ],
-                  ),
-                  const Text('₹700'),
-                ],
-              ),
-            ),
-             Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
-              child: Row(
-                children: [
-                  const Text('Size:'),
-                  Text(
-                    'Free size',
-                    style: TextStyle(color: Colors.grey[700]),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => setState(() => quantity -= 1),
-                        icon: const Icon(Icons.remove_circle),
-                      ),
-                      Text('$quantity'),
-                      IconButton(
-                        onPressed: () => setState(() => quantity += 1),
-                        icon: const Icon(Icons.add_circle),
-                      ),
-                    ],
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text('Remove'),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(),
-
-            // Seller details section
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  CircleAvatar(),
-                  SizedBox(width: 10,),
-                  const Text('Sold by:'),
-                  Text('example'),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
-              child: Row(
-                children: const [
-                  Text('free delivery'),
-                ],
-              ),
-            ),
-            Divider(),
+                  );
+                },
+              );
+            }).toList(),
             Padding(
               padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
               child: Text(
@@ -190,17 +237,19 @@ class _CartSummeryState extends State<CartSummery> {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => OrderConfirm())
+                  );
+                },
                 child: const Text('Place Order'),
               ),
             ),
           ],
         ),
-           
-        
-        ),
-      );
-  
+      ),
+    );
   }
 }
 

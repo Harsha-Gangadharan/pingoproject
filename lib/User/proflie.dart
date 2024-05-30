@@ -1,11 +1,15 @@
-
-
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/User/Authentication/getstart.dart';
 import 'package:flutter_application_1/User/Editprofile.dart';
+import 'package:flutter_application_1/User/Following.dart';
+import 'package:flutter_application_1/User/addaddress.dart';
+import 'package:flutter_application_1/User/addbankdetail.dart';
+import 'package:flutter_application_1/User/followerspage.dart';
+import 'package:flutter_application_1/User/notification.dart';
+import 'package:flutter_application_1/User/wishlist.dart';
+import 'package:flutter_application_1/User/yourorders.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,36 +21,59 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  int _selectedIndex = 0;
-  final List<String> posts = [
-    'asset/product_image.png',
-    'asset/product_image.png',
-  ];
-  final firestore=FirebaseFirestore.instance;
-final auth=FirebaseAuth.instance;
+  final firestore = FirebaseFirestore.instance;
+  final auth = FirebaseAuth.instance;
+
+  Future<QuerySnapshot<Map<String, dynamic>>> getSelectedUserProfile(
+      String id) async {
+    return firestore
+        .collection("productdetails")
+        .where("uid", isEqualTo: id)
+        .get();
+  }
+
+  Future<int> getUserPostCount(String userId) async {
+    QuerySnapshot<Map<String, dynamic>> snapshot = await firestore
+        .collection("productdetails")
+        .where("uid", isEqualTo: userId)
+        .get();
+    return snapshot.size;
+  }
+
   @override
   Widget build(BuildContext context) {
-    String id=auth.currentUser!.uid;
+    String id = auth.currentUser!.uid;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color.fromARGB(183, 225, 56, 132),
-        title: StreamBuilder(stream: firestore.collection('useregisteration').doc(id).snapshots(),
-         builder: (context,snapshot)
-         {
-          DocumentSnapshot data=snapshot.data!;
-           return  Text('${data['username']}',style: GoogleFonts.inknutAntiqua(
-          fontSize: 26,
-          color: const Color.fromARGB(255, 14, 14, 14),
-        ),);
-              
-         }
-         ),
-       
-     
+        backgroundColor: const Color.fromARGB(183, 225, 56, 132),
+        title: StreamBuilder<DocumentSnapshot>(
+          stream: firestore.collection('useregisteration').doc(id).snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (!snapshot.hasData || snapshot.hasError) {
+              return const Center(child: Text('No data available'));
+            }
+            DocumentSnapshot data = snapshot.data!;
+            if (!data.exists) {
+              return const Center(child: Text('No data available'));
+            }
+            String username = data.get('username') ?? 'No Username';
+            return Text(
+              username,
+              style: GoogleFonts.inknutAntiqua(
+                fontSize: 26,
+                color: const Color.fromARGB(255, 14, 14, 14),
+              ),
+            );
+          },
+        ),
         actions: [
           PopupMenuButton(
             itemBuilder: (BuildContext context) => <PopupMenuEntry>[
-              PopupMenuItem(
+              const PopupMenuItem(
+                value: 'wishlist',
                 child: Row(
                   children: [
                     Icon(Icons.favorite),
@@ -54,9 +81,9 @@ final auth=FirebaseAuth.instance;
                     Text('Wishlist'),
                   ],
                 ),
-                value: 'wishlist',
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
+                value: 'logout',
                 child: Row(
                   children: [
                     Icon(Icons.logout),
@@ -64,9 +91,9 @@ final auth=FirebaseAuth.instance;
                     Text('Logout'),
                   ],
                 ),
-                value: 'logout',
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
+                value: 'settings',
                 child: Row(
                   children: [
                     Icon(Icons.settings),
@@ -74,21 +101,19 @@ final auth=FirebaseAuth.instance;
                     Text('Settings'),
                   ],
                 ),
-                value: 'settings',
               ),
             ],
             onSelected: (value) {
-              // Handle menu item selection
               switch (value) {
                 case 'wishlist':
-                  print('Wishlist selected');
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => WishlistPage()));
                   break;
                 case 'logout':
-                  print('Logout selected');
-                  _showLogoutBottomSheet(); // Show logout confirmation bottom sheet
+                  _showLogoutBottomSheet();
                   break;
                 case 'settings':
-                  _showSettingsBottomSheet(); // Show settings bottom sheet
+                  _showSettingsBottomSheet();
                   break;
                 default:
               }
@@ -101,83 +126,165 @@ final auth=FirebaseAuth.instance;
           children: [
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: StreamBuilder(stream:firestore.collection('useregisteration').doc(id).snapshots() ,
-               builder: (context,snapshot)
-               {
-                DocumentSnapshot data=snapshot.data!;
-                return  Column(
-                children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundImage: AssetImage('asset/profile.png'), // Replace with your image path
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    '${data['username']}',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  Text('Bio description here'),
-                  SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: firestore
+                    .collection('useregisteration')
+                    .doc(id)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData || snapshot.hasError) {
+                    return const Center(child: Text('No data available'));
+                  }
+                  DocumentSnapshot data = snapshot.data!;
+                  if (!data.exists) {
+                    return const Center(child: Text('No data available'));
+                  }
+                  String imageUrl = data.get('image') ?? '';
+                  String name = data.get('username') ?? 'No Name';
+                  String bio = data.get('bio') ?? 'No Bio';
+                  return Column(
                     children: [
-                      _buildStatColumn('Posts', '100'),
-                      _buildStatColumn('Followers', '10K'),
-                      _buildStatColumn('Following', '50'),
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundImage: NetworkImage(imageUrl),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        name,
+                        style: const TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(bio),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          FutureBuilder<int>(
+                            future: getUserPostCount(id),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                              int postCount = snapshot.data ?? 0;
+                              return Column(
+                                children: [
+                                  Text(
+                                    '$postCount',
+                                    style: TextStyle(
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    'Posts',
+                                    style: TextStyle(fontSize: 16.0),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                          _buildStatColumn('Followers', '10K', () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => FollowingList()),
+                            );
+                          }),
+                          _buildStatColumn('Following', '50', () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => FollowingListPage()),
+                            );
+                          }),
+                        ],
+                      ),
                     ],
-                  ),
-                ],
-              );
-
-               }
-               )
-             
-            ),
-            // Edit Profile Button
-            TextButton(
-              onPressed: () {
-                    Navigator.push(context,MaterialPageRoute(builder: (context) =>EditProfile(),));
-                print('Edit Profile button pressed');
-              },
-              child: Text('Edit Profile'),
-            ),
-            Divider(),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: posts.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 20.0, // Adjust the gap between images vertically
-                crossAxisSpacing: 20.0, // Adjust the gap between images horizontally
+                  );
+                },
               ),
-              itemBuilder: (context, index) {
-                return Image.asset(
-                  posts[index],
-                  fit: BoxFit.cover,
-                  height: 100, // Adjust the height of the images
-                  width: 100, // Adjust the width of the images
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => EditProfile()));
+                    print('Edit Profile button pressed');
+                  },
+                  child: const Text('Edit Profile'),
+                ),
+                const SizedBox(width: 16),
+                TextButton(
+                  onPressed: () {
+                    print('Follow button pressed');
+                    // Add follow functionality here
+                  },
+                  child: const Text('Follow'),
+                ),
+              ],
+            ),
+            const Divider(),
+            FutureBuilder(
+              future: getSelectedUserProfile(id),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text('No products available'));
+                }
+                final userData = snapshot.data!.docs;
+
+                return SizedBox(
+                  height: 500,
+                  child: GridView.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2),
+                    itemCount: userData.length,
+                    itemBuilder: (context, index) {
+                      return Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image:
+                                NetworkImage(userData[index]["productimage"]),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 );
               },
             ),
           ],
         ),
       ),
-      
     );
   }
 
-  Widget _buildStatColumn(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        SizedBox(height: 4),
-        Text(label),
-      ],
+  Widget _buildStatColumn(String label, String value, Function()? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(label),
+        ],
+      ),
     );
   }
 
@@ -191,46 +298,57 @@ final auth=FirebaseAuth.instance;
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ListTile(
-                leading: Icon(Icons.notifications),
-                title: Text('Notification'),
+                leading: const Icon(Icons.notifications),
+                title: const Text('Notification'),
                 onTap: () {
                   print('Notification tapped');
-                  Navigator.pop(context);
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => NotificationPage()));
                 },
               ),
-              Divider(),
+              const Divider(),
               ListTile(
-                leading: Icon(Icons.account_balance),
-                title: Text('Add Your Bank Details'),
+                leading: const Icon(Icons.account_balance),
+                title: const Text('Add Your Bank Details'),
                 onTap: () {
                   print('Add Your Bank Details tapped');
-                  Navigator.pop(context);
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => BankDetailsPage()));
                 },
               ),
-              Divider(),
+              const Divider(),
               ListTile(
-                leading: Icon(Icons.location_on),
-                title: Text('Saved Address'),
+                leading: const Icon(Icons.location_on),
+                title: const Text('Saved Address'),
                 onTap: () {
                   print('Saved Address tapped');
-                  Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => AddAddressPage()));
+                
                 },
               ),
-              Divider(),
+              const Divider(),
               ListTile(
-                leading: Icon(Icons.shopping_cart),
-                title: Text('Your Orders'),
+                leading: const Icon(Icons.shopping_cart),
+                title: const Text('Your Orders'),
                 onTap: () {
                   print('Your Orders tapped');
-                  Navigator.pop(context);
+Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => YourOrder()));;
                 },
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                child: Text('Close'),
+                child: const Text('Close'),
               ),
             ],
           ),
@@ -248,31 +366,33 @@ final auth=FirebaseAuth.instance;
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
+              const Text(
                 'Are you sure you want to logout?',
                 style: TextStyle(fontSize: 18),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton(
-                    onPressed: ()async {
-                      SharedPreferences preferences=await SharedPreferences.getInstance();
-                      auth.signOut().then((value) =>Navigator.push(context,MaterialPageRoute(builder: (context)=> Getstart())));
+                    onPressed: () async {
+                      SharedPreferences preferences =
+                          await SharedPreferences.getInstance();
+                      await auth.signOut();
                       preferences.clear();
-                     // log('logout successfully' as num);
-                      
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => Getstart()),
+                      );
                       print('Logout confirmed');
-                      Navigator.pop(context);
                     },
-                    child: Text('Logout'),
+                    child: const Text('Logout'),
                   ),
                   ElevatedButton(
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    child: Text('Cancel'),
+                    child: const Text('Cancel'),
                   ),
                 ],
               ),

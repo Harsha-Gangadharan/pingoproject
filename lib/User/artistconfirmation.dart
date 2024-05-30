@@ -1,4 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/User/Editbankdetails.dart';
+import 'package:flutter_application_1/User/addbankdetail.dart';
+import 'package:flutter_application_1/User/newpost.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ArtistConfirm extends StatefulWidget {
@@ -8,8 +13,10 @@ class ArtistConfirm extends StatefulWidget {
   State<ArtistConfirm> createState() => _ArtistConfirmState();
 }
 
+int? _selectedValue;
+
 class _ArtistConfirmState extends State<ArtistConfirm> {
-  String? _selectedOption;
+  int? _selectedOption;
 
   @override
   Widget build(BuildContext context) {
@@ -23,39 +30,114 @@ class _ArtistConfirmState extends State<ArtistConfirm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Center(child: Image.asset("asset/Artist.png")), // Corrected asset path
+              Center(child: Image.asset("asset/Artist.png")),
               SizedBox(height: 20),
               ListTile(
                 title: Text(
                   'I, the undersigned, confirm that my works of art (paintings, statues and other works of art) are not subject to the UNESCO Convention of 14 November 1970. (Prohibition and prevention of illicit import, export and transfer of ownership of cultural property).',
                   style: GoogleFonts.inknutAntiqua(),
                 ),
-                leading: Radio<String>(
-                  value: 'confirm',
+              ),
+              ListTile(
+                leading: Radio(
+                  value: 1,
                   groupValue: _selectedOption,
+                  toggleable: true,
                   onChanged: (value) {
                     setState(() {
-                      _selectedOption = value;
+                      _selectedOption = value as int?;
+                      log(_selectedOption.toString());
                     });
                   },
                 ),
+                title: Text('Confirm'),
               ),
-               Center(
-                child: SizedBox(
-                  height: 50.0,
-                  child: ElevatedButton(
-                      onPressed: () {
-                        
-                      },
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Color.fromARGB(174, 195, 60, 105)),
-                      child: const Text(
-                        'Confirm',
-                        style: TextStyle(color: Colors.white),
-                      )),
-                ),
-               ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _selectedOption == 1
+                      ? Center(
+                          child: SizedBox(
+                            height: 50.0,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return Container(
+                                      padding: EdgeInsets.all(20.0),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            'Do you want to edit the bank details?',
+                                            style: TextStyle(fontSize: 18.0),
+                                          ),
+                                          SizedBox(height: 20),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: [
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            EditBankDetails()),
+                                                  );
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Color.fromARGB(
+                                                      174, 195, 60, 105),
+                                                ),
+                                                child: Text('Edit'),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                     Navigator.push(context, MaterialPageRoute(builder: (context) => NewPost()));
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      Colors.grey,
+                                                ),
+                                                child: Text('No'),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Color.fromARGB(174, 195, 60, 105),
+                              ),
+                              child: const Text(
+                                'Submit',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        )
+                      : SizedBox(
+                          height: 50.0,
+                          child: ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                            ),
+                            child: const Text(
+                              'Confirm',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                ],
+              ),
             ],
           ),
         ),

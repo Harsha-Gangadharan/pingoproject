@@ -2,12 +2,16 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/Admin/Signup.dart';
+import 'package:flutter_application_1/Admin/expo.dart';
 import 'package:flutter_application_1/Admin/home.dart';
 import 'package:flutter_application_1/Admin/login.dart';
 import 'package:flutter_application_1/Admin/manageuser.dart';
+import 'package:flutter_application_1/Admin/payment.dart';
 import 'package:flutter_application_1/User/Authentication/createprofile.dart';
 import 'package:flutter_application_1/User/Authentication/getstart.dart';
 import 'package:flutter_application_1/User/Authentication/joinus.dart';
+import 'package:flutter_application_1/User/Authentication/logopage.dart';
+
 import 'package:flutter_application_1/User/Editprofile.dart';
 import 'package:flutter_application_1/User/Following.dart';
 import 'package:flutter_application_1/User/addaddress.dart';
@@ -36,6 +40,7 @@ import 'package:flutter_application_1/User/paymentmethod.dart';
 import 'package:flutter_application_1/User/proflie.dart';
 import 'package:flutter_application_1/User/review.dart';
 import 'package:flutter_application_1/User/search.dart';
+import 'package:flutter_application_1/User/splashscreen.dart';
 import 'package:flutter_application_1/User/viewallreview.dart';
 import 'package:flutter_application_1/User/Authentication/welcome.dart';
 import 'package:flutter_application_1/User/wishlist.dart';
@@ -43,6 +48,8 @@ import 'package:flutter_application_1/User/Authentication/worldofarts.dart';
 import 'package:flutter_application_1/User/yourorders.dart';
 import 'package:flutter_application_1/bisiness_logic/firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/controller/payment_controller.dart';
+import 'package:provider/provider.dart';
 Future<void> main() async {
 // ...
 WidgetsFlutterBinding.ensureInitialized();
@@ -58,15 +65,18 @@ class MyApp extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return MultiProvider(providers: [ChangeNotifierProvider<PaymentController>(create: (_)=>PaymentController())],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+      home:SplashScreen()
       ),
-    home: Chatscreen()
     );
     
   }
 }
+String RECEIVERUPIID="upiid@paytm";

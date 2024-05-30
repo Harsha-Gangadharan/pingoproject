@@ -1,5 +1,3 @@
-
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -14,17 +12,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class Joinus extends StatefulWidget {
   const Joinus({Key? key}) : super(key: key);
-  check(BuildContext context)async{
-    SharedPreferences preferences=await SharedPreferences.getInstance();
-    String? name=preferences.getString('is login');
-    if(name!=null){
-      Navigator.push(context,MaterialPageRoute(builder:(context)=>Home()));
-    }else
-    {
-            Navigator.push(context,MaterialPageRoute(builder:(context)=>Getstart()));
+  // check(BuildContext context)async{
+  //   SharedPreferences preferences=await SharedPreferences.getInstance();
+  //   String? name=preferences.getString('is login');
+  //   if(name!=null){
+  //     Navigator.push(context,MaterialPageRoute(builder:(context)=>Home()));
+  //   }else
+  //   {
+  //           Navigator.push(context,MaterialPageRoute(builder:(context)=>Getstart()));
 
-    }
-  }
+  //   }
+  // }
 
   @override
   State<Joinus> createState() => _JoinusState();
@@ -36,49 +34,71 @@ class _JoinusState extends State<Joinus> {
   final _passwordController = TextEditingController();
   final _EmailIdController = TextEditingController();
   final _emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-  final _auth=FirebaseAuth.instance;
-  
+  final _auth = FirebaseAuth.instance;
+bool obscure=true;
+void toggile(){
+  setState(() {
+    obscure=!obscure;
+  });
+}
   String email = '';
   String password = '';
-  Future addfirebase(Map<String,dynamic>registerreduserinfomap,String userid)async{
-  return FirebaseFirestore.instance
-  .collection('useregisteration')
-    .doc(userid)
-    .set(registerreduserinfomap);
- }
+  Future addfirebase(
+      Map<String, dynamic> registerreduserinfomap, String userid) async {
+    return FirebaseFirestore.instance
+        .collection('useregisteration')
+        .doc(userid)
+        .set(registerreduserinfomap);
+  }
+
   registration() async {
     try {
-      final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      SharedPreferences preferences = await SharedPreferences.getInstance();
+
+      final credential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+      preferences.setString('islogin', credential.user!.uid);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration Success'),),
+        SnackBar(
+          content: Text('Registration Success'),
+        ),
       );
-       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Worldofarts()));
-       //String registered_user_id=randomString(10);
-       String uid=_auth.currentUser!.uid;
-       Map<String,dynamic>registerinfomap={
-        "username":_UsernameController.text,
-        "email":_EmailIdController.text,
-        "password":_passwordController.text,
-        "id":uid,
-       };
-       await addfirebase(registerinfomap,uid );
-       const SnackBar(content:Text('details added to firebase successfully'));
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => Worldofarts()));
+      //String registered_user_id=randomString(10);
+      String uid = _auth.currentUser!.uid;
+      Map<String, dynamic> registerinfomap = {
+        "username": _UsernameController.text,
+        "email": _EmailIdController.text,
+        "password": _passwordController.text,
+        "image":'',
+        "bio": '',
+        "id": uid,
+      };
+      await addfirebase(registerinfomap, uid);
+      const SnackBar(content: Text('details added to firebase successfully'));
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Weak password'),),
+          SnackBar(
+            content: Text('Weak password'),
+          ),
         );
       } else if (e.code == 'email-already-in-use') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Email already in use'),),
+          SnackBar(
+            content: Text('Email already in use'),
+          ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An error occurred'),),
+        SnackBar(
+          content: Text('An error occurred'),
+        ),
       );
     }
   }
@@ -87,9 +107,26 @@ class _JoinusState extends State<Joinus> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.pinkAccent,
+        backgroundColor: Color(0xffF04D6D),
       ),
-      body: SingleChildScrollView(
+      body: Stack(
+        children: [
+         Container(
+  decoration: BoxDecoration(
+    image: DecorationImage(
+      image: AssetImage("asset/background.png"), // Replace with your image path
+      fit: BoxFit.cover,
+      colorFilter: ColorFilter.mode(
+        Colors.black.withOpacity(0.5), // Change the opacity value here (0.5 for 50% opacity)
+        BlendMode.dstATop, // Adjust the blend mode as needed
+      ),
+    ),
+  ),
+  width: MediaQuery.of(context).size.width,
+  height: MediaQuery.of(context).size.height,
+),
+SingleChildScrollView(
+       
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Form(
@@ -97,18 +134,18 @@ class _JoinusState extends State<Joinus> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Center(
-                  child: Image.asset("asset/sign.png"),
-                ),
+               
                 Center(
                   child: Text(
                     'JOIN US',
                     style: GoogleFonts.inknutAntiqua(
                       fontSize: 36,
                       fontWeight: FontWeight.bold,
+                      color:Colors.black
                     ),
                   ),
                 ),
+                SizedBox(height: 50,),
                 TextFormField(
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   controller: _UsernameController,
@@ -117,7 +154,7 @@ class _JoinusState extends State<Joinus> {
                     prefixIcon: Icon(Icons.account_circle),
                     border: OutlineInputBorder(),
                     filled: true,
-                    fillColor: Color.fromARGB(220, 199, 192, 192),
+                    fillColor: Colors.white
                   ),
                   validator: (value) {
                     if (value!.isEmpty) {
@@ -135,7 +172,7 @@ class _JoinusState extends State<Joinus> {
                     prefixIcon: Icon(Icons.email),
                     border: OutlineInputBorder(),
                     filled: true,
-                    fillColor: Color.fromARGB(220, 201, 197, 197),
+                    fillColor: Colors.white
                   ),
                   validator: (value) {
                     if (value!.isEmpty) {
@@ -151,11 +188,13 @@ class _JoinusState extends State<Joinus> {
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   controller: _passwordController,
                   decoration: InputDecoration(
+                    suffixIcon: IconButton(onPressed:(){
+                      toggile();
+                    },icon: Icon(obscure? Icons.visibility:Icons.visibility_off)),
                     labelText: 'Password',
-                    prefixIcon: Icon(Icons.remove_red_eye),
                     border: OutlineInputBorder(),
                     filled: true,
-                    fillColor: Color.fromARGB(220, 201, 197, 197),
+                    fillColor: Colors.white
                   ),
                   validator: (value) {
                     if (value!.isEmpty) {
@@ -179,14 +218,16 @@ class _JoinusState extends State<Joinus> {
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Invalid username, password, or EmailId'),
+                              content: Text(
+                                  'Invalid username, password, or EmailId'),
                               backgroundColor: Colors.red,
                             ),
                           );
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 195, 60, 105),
+                        backgroundColor:
+                            const Color(0xffF04D6D),
                       ),
                       child: const Text(
                         'Sign Up',
@@ -203,7 +244,7 @@ class _JoinusState extends State<Joinus> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 20.0,
-                        color: Colors.pink,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -219,21 +260,16 @@ class _JoinusState extends State<Joinus> {
                         height: 30.0,
                         child: Image.asset("asset/google.png"),
                       ),
-                      const SizedBox(width: 20.0),
-                      SizedBox(
-                        width: 30.0,
-                        height: 30.0,
-                        child: Image.asset("asset/facebook.png"),
-                      ),
+                     
                     ],
                   ),
                 ),
                 const SizedBox(
-                  height: 20.0,
+                  height: 50.0,
                   child: Center(
                     child: Text(
                       'Already have an account',
-                      style: TextStyle(color: Colors.blue),
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ),
@@ -241,6 +277,7 @@ class _JoinusState extends State<Joinus> {
                 Center(
                   child: SizedBox(
                     height: 50.0,
+                    width: 100.0,
                     child: TextButton(
                       onPressed: () {
                         Navigator.push(
@@ -251,7 +288,8 @@ class _JoinusState extends State<Joinus> {
                         );
                       },
                       style: TextButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 195, 60, 105),
+                        backgroundColor:
+                            const Color(0xffF04D6D),
                       ),
                       child: const Text(
                         'Sign in',
@@ -264,7 +302,9 @@ class _JoinusState extends State<Joinus> {
             ),
           ),
         ),
-      ),
+      )
+        ],
+    ),
     );
   }
 }

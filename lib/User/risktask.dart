@@ -85,77 +85,6 @@ class _HomeState extends State<Home> {
       liked = isLiked;
     });
   }
-  void _toggleFollowing(String userId) async {
-  final currentUserId = FirebaseAuth.instance.currentUser!.uid;
-  final followersRef = FirebaseFirestore.instance.collection('followers').doc(userId);
-
-  final followersDoc = await followersRef.get();
-  if (followersDoc.exists) {
-    // If the document already exists, update the "following" field
-    List<String> followingList = List<String>.from(followersDoc.data()!['following'] ?? []);
-    if (followingList.contains(currentUserId)) {
-      // If the current user is already in the following list, remove them
-      followingList.remove(currentUserId);
-    } else {
-      // Otherwise, add the current user to the following list
-      followingList.add(currentUserId);
-    }
-    await followersRef.update({'following': followingList});
-  } else {
-    // If the document does not exist, create a new one
-    await followersRef.set({'following': [currentUserId]});
-  }
-}
-Future<bool> isProductInCart(String productId) async {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-  final cartRef = FirebaseFirestore.instance
-      .collection('cart')
-      .where('uid', isEqualTo: uid)
-      .where('productId', isEqualTo: productId);
-
-  final cartDoc = await cartRef.get();
-  return cartDoc.docs.isNotEmpty;
-}
-Future<void> _toggleCart(String productId, Map<String, dynamic> productData) async {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-  final cartRef = FirebaseFirestore.instance
-      .collection('cart')
-      .where('uid', isEqualTo: uid)
-      .where('productId', isEqualTo: productId);
-
-  final QuerySnapshot<Map<String, dynamic>> cartDoc = await cartRef.get();
-
-  if (cartDoc.docs.isNotEmpty) {
-    // Remove from cart
-    await cartDoc.docs.first.reference.delete();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Item removed from cart'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  } else {
-    // Add to cart
-    await FirebaseFirestore.instance.collection('cart').doc(productId).set({
-      'productId': productId,
-      'uid': uid,
-      'productData': productData,
-      'qty':1,
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Item added to cart'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
-  setState(() {
-    // Refresh the state to update the UI
-  });
-}
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -182,9 +111,9 @@ Future<void> _toggleCart(String productId, Map<String, dynamic> productData) asy
           ),
           IconButton(
             onPressed: () {
-             Navigator.push(
+              Navigator.push(
                 context,
-               MaterialPageRoute(builder: (context) => CartPage())
+                MaterialPageRoute(builder: (context) => CartPage()),
               );
             },
             icon: Icon(Icons.shopping_cart),
@@ -245,26 +174,24 @@ Future<void> _toggleCart(String productId, Map<String, dynamic> productData) asy
                                   ),
                                 ),
                                 Spacer(),
-ElevatedButton(
-  onPressed: () {
-    _toggleFollowing(data[index]["uid"]); // Call _toggleFollowing with the target user's ID
-    setState(() {
-      isFollowingList[index] = !isFollowingList[index];
-    });
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: isFollowingList[index]
-      ? Colors.blue.shade300
-      : Colors.grey,
-  ),
-  child: Text(
-    isFollowingList[index]
-      ? 'Following'
-      : 'Follow',
-    style: TextStyle(color: Colors.black),
-  ),
-),
-
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      isFollowingList[index] = !isFollowingList[index];
+                                    });
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isFollowingList[index]
+                                        ? Colors.blue.shade300
+                                        : Colors.grey,
+                                  ),
+                                  child: Text(
+                                    isFollowingList[index]
+                                        ? 'Following'
+                                        : 'Follow',
+                                    style: TextStyle(color: Colors.black),
+                                  ),
+                                ),
                                 PopupMenuButton(
                                   itemBuilder: (BuildContext context) {
                                     return [
@@ -335,14 +262,6 @@ ElevatedButton(
                                 ),
                               ),
                             ),
-                              SizedBox(height: 10),
-    Text(
-      data[index]["description"] ?? "", // Fetch and display description
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.normal,
-      ),
-    ),
                             SizedBox(height: 10),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -395,8 +314,7 @@ ElevatedButton(
                                   onPressed: () {
                                     Navigator.push(
                                       context,
-                                      MaterialPageRoute(builder: (context) => BuynowPage( productId: data[index]['productId'],userProfileImage: userData?["image"] ?? "",userName: userData?["username"] ?? "",
-                                          )),
+                                      MaterialPageRoute(builder: (context) => BuynowPage(productId: data[index]['productId'],userProfileImage: userData?["image"] ?? "",userName: userData?["username"] ?? "",)),
                                     );
                                   },
                                   style: ElevatedButton.styleFrom(
@@ -407,28 +325,17 @@ ElevatedButton(
                                     style: GoogleFonts.inknutAntiqua(color: Colors.white),
                                   ),
                                 ),
-                               FutureBuilder<bool>(
-  future: isProductInCart(data[index].id),
-  builder: (context, snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return IconButton(
-        icon: Icon(Icons.add_shopping_cart),
-        onPressed: null,
-      );
-    }
-    bool isInCart = snapshot.data ?? false;
-    return IconButton(
-      onPressed: () {
-        _toggleCart(data[index].id, data[index].data());
-      },
-      icon: Icon(
-        isInCart ? Icons.remove_shopping_cart : Icons.add_shopping_cart,
-        color: isInCart ? Colors.red : null,
-      ),
-    );
-  },
-),
-
+                                IconButton(
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Item added to cart'),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  },
+                                  icon: Icon(Icons.add_shopping_cart),
+                                ),
                               ],
                             ),
                             SizedBox(height: 20),

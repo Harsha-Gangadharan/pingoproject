@@ -1,8 +1,13 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/User/hompage.dart';
+import 'package:flutter_application_1/User/package.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 class AddAddressPage extends StatefulWidget {
-  const AddAddressPage({Key? key}) : super(key: key);
+  
 
   @override
   _AddAddressPageState createState() => _AddAddressPageState();
@@ -18,7 +23,46 @@ class _AddAddressPageState extends State<AddAddressPage> {
   final nearFamousPlaceController = TextEditingController();
   final nameController = TextEditingController();
   final contactNumberController = TextEditingController();
-  final userNameController = TextEditingController();
+  final _auth = FirebaseAuth.instance;
+
+Future<void> AddressDetailsadd() async {
+  try {
+    String uid = _auth.currentUser!.uid;
+    await FirebaseFirestore.instance.collection('addressdetails').doc(uid).set({
+      'address.houseNumber': houseNumberController.text,
+      'address.roadAreaColony': roadAreaColonyController.text,
+      'address.pincode': pincodeController.text,
+      'address.city': cityController.text,
+      'address.state': stateController.text,
+      'address.nearFamousPlace': nearFamousPlaceController.text,
+      'address.name': nameController.text,
+      'address.contactNumber': contactNumberController.text,
+      'address.timestamp': FieldValue.serverTimestamp(),
+      'uid': uid,
+    });
+
+    print('Address details added successfully');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Address details added successfully'),
+      ),
+    );
+
+    Navigator.push(context, MaterialPageRoute(builder: (context) =>Packages(indexNum: 0,)));
+  } catch (e) {
+    print('Failed to add address details: $e');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Failed to add address details: $e'),
+      ),
+    );
+  }
+}
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +80,7 @@ class _AddAddressPageState extends State<AddAddressPage> {
           key: _formKey,
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-           child: Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
@@ -46,7 +90,6 @@ class _AddAddressPageState extends State<AddAddressPage> {
                     const Text('Address'),
                   ],
                 ),
-              
                 TextFormField(
                   controller: houseNumberController,
                   decoration: const InputDecoration(
@@ -126,12 +169,10 @@ class _AddAddressPageState extends State<AddAddressPage> {
                   controller: nearFamousPlaceController,
                   decoration: const InputDecoration(
                     labelText: 'Near Famous Place/Shop/School.etc.(optional)',
-                    hintText: 'Exmple City',
+                    hintText: 'Example City',
                   ),
                 ),
-                 const SizedBox(height: 8.0),
-                // Rest of your TextFormField widgets
-                // ...
+                const SizedBox(height: 8.0),
                 Row(
                   children: [
                     Icon(Icons.call), // Call icon
@@ -164,28 +205,31 @@ class _AddAddressPageState extends State<AddAddressPage> {
                     return null;
                   },
                 ),
-               const SizedBox(height: 20.0,),
-               Center(
-                 child: SizedBox(height: 50.0,
-                   child: ElevatedButton(
-                    onPressed: (){Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) =>Home()),
-                    );
-        },
-                    style: TextButton.styleFrom(backgroundColor:const Color.fromARGB(255, 195, 60, 105) ),
-                    child: const Text('Continue',
-                   style:TextStyle(color: Colors.white) ,)
-                   ),
-                 ),
-               ),
-              ]
+                const SizedBox(height: 20.0),
+                Center(
+                  child: SizedBox(
+                    height: 50.0,
+                    child: ElevatedButton(
+                      onPressed: (){
+                             if (_formKey.currentState!.validate()) {
+                        AddressDetailsadd();
+                      }
+                      },
+                      style: TextButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 195, 60, 105),
+                      ),
+                      child: const Text(
+                        'Continue',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-
-
       ),
-            );
+    );
   }
 }

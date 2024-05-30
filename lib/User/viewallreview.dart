@@ -1,30 +1,20 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/User/review.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'review.dart';
 
-class ViewallReview extends StatefulWidget {
-  const ViewallReview({Key? key}) : super(key: key);
+class ViewAllReview extends StatefulWidget {
+  final String productId;
+
+  ViewAllReview({required this.productId});
 
   @override
-  State<ViewallReview> createState() => _ViewallReviewState();
+  State<ViewAllReview> createState() => _ViewAllReviewState();
 }
 
-class _ViewallReviewState extends State<ViewallReview> {
-  final List<Review> reviews = [
-    Review(
-      rating: 5,
-      comment: 'Excellent product!',
-      user: 'User1',
-      date: '2 days ago',
-    ),
-    Review(
-      rating: 4,
-      comment: 'Good but could be better.',
-      user: 'User2',
-      date: '1 week ago',
-    ),
-    // Add more reviews as needed
-  ];
+class _ViewAllReviewState extends State<ViewAllReview> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -37,91 +27,141 @@ class _ViewallReviewState extends State<ViewallReview> {
           color: Color.fromARGB(255, 14, 14, 14),
         ),
       ),
-      body: ListView.builder(
-        itemCount: reviews.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            leading: CircleAvatar(
-              child: Text(reviews[index].user[0]),
-            ),
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('${reviews[index].user}'),
-                Text('${reviews[index].date}'),
-              ],
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${reviews[index].comment}',
-                  style: TextStyle(fontSize: 16),
-                ),
-                SizedBox(height: 8),
-                Row(
-                  children: List.generate(
-                    reviews[index].rating,
-                    (i) => Icon(Icons.star, color: Colors.amber, size: 16),
-                  ),
-                ),
-              ],
-            ),
-            trailing: PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'report') {
-                  // Show report dialog
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text('Report'),
-                        content: Text('You reported this comment.'),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: Text('OK'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                }
-              },
-              itemBuilder: (BuildContext context) {
-                return {'report'}.map((String choice) {
-                  return PopupMenuItem<String>(
-                    value: choice,
-                    child: Row(
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('ratings')
+            .where('productId', isEqualTo: widget.productId)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(child: Text('No reviews yet'));
+          }
+
+          List<Review> reviews = snapshot.data!.docs.map((doc) {
+            return Review.fromFirestore(doc);
+          }).toList();
+
+          return ListView.builder(
+            itemCount: reviews.length,
+            itemBuilder: (context, index) {
+              String uid = reviews[index].uid;
+              bool isCurrentUser = uid == _auth.currentUser!.uid;
+
+              return FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('useregisteration')
+                    .doc(uid)
+                    .get(),
+                builder: (context, userSnapshot) {
+                  if (userSnapshot.connectionState == ConnectionState.waiting) {
+                    return ListTile(
+                      leading: CircleAvatar(child: CircularProgressIndicator()),
+                      title: Text('Loading...'),
+                      subtitle: Text('Loading...'),
+                    );
+                  }
+
+                  if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
+                    return ListTile(
+                      leading: CircleAvatar(child: Icon(Icons.error)),
+                      title: Text('User not found'),
+                      subtitle: Text('User not found'),
+                    );
+                  }
+
+                  var userData = userSnapshot.data!;
+                  String imageUrl = userData['image'] ?? '';
+                  String username = userData['username'] ?? '';
+
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: NetworkImage(imageUrl),
+                      radius: 20,
+                    ),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(Icons.report),
-                        SizedBox(width: 8),
-                        Text('Report'),
+                        Text(username),
+                        Text(reviews[index].date),
                       ],
                     ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          reviews[index].review,
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          children: List.generate(
+                            reviews[index].rating,
+                            (i) => Icon(Icons.star, color: Colors.amber, size: 16),
+                          ),
+                        ),
+                      ],
+                    ),
+                    trailing: isCurrentUser
+                        ? IconButton(
+                            icon: Icon(Icons.delete),
+                            onPressed: () async {
+                              await FirebaseFirestore.instance
+                                  .collection('ratings')
+                                  .doc(snapshot.data!.docs[index].id)
+                                  .delete();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Review deleted')),
+                              );
+                            },
+                          )
+                        : PopupMenuButton<String>(
+                            onSelected: (value) {
+                              if (value == 'report') {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text('Report'),
+                                      content: Text('You reported this comment.'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: Text('OK'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              }
+                            },
+                            itemBuilder: (BuildContext context) {
+                              return {'report'}.map((String choice) {
+                                return PopupMenuItem<String>(
+                                  value: choice,
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.report),
+                                      SizedBox(width: 8),
+                                      Text('Report'),
+                                    ],
+                                  ),
+                                );
+                              }).toList();
+                            },
+                          ),
                   );
-                }).toList();
-              },
-            ),
+                },
+              );
+            },
           );
         },
       ),
     );
   }
-}
-
-class Review {
-  final int rating;
-  final String comment;
-  final String user;
-  final String date;
-
-  Review({
-    required this.rating,
-    required this.comment,
-    required this.user,
-    required this.date,
-  });
 }

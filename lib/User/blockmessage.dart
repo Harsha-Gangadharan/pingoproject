@@ -10,19 +10,24 @@ class _BlockMessageState extends State<BlockMessage> {
   final List<ChatMessage> _messages = <ChatMessage>[];
   final TextEditingController _textController = TextEditingController();
 
-  void _handleSubmit(String text) {
-    _textController.clear();
-    String name = 'User 1';
+void _handleSubmit(String text) {
+  _textController.clear();
+  String name = 'User 1';
+
+  // Check if the text is not empty
+  if (text.isNotEmpty) {
     ChatMessage message = ChatMessage(
       text: text,
       name: name,
     );
+
     setState(() {
       _messages.insert(0, message);
     });
   }
+}
 
-  void _showBottomSheet(BuildContext context) {
+void _showBottomSheet(BuildContext context) {
   showModalBottomSheet(
     context: context,
     builder: (BuildContext context) {
@@ -69,31 +74,35 @@ class _BlockMessageState extends State<BlockMessage> {
   );
 }
 
-  Widget _buildTextComposer() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Row(
-        children: [
-          Flexible(
-            child: TextField(
-              controller: _textController,
-              onSubmitted: _handleSubmit,
-              decoration: InputDecoration.collapsed(
-                hintText: 'Send a message',
-              ),
+Widget _buildTextComposer() {
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 8.0),
+    child: Row(
+      children: [
+        Flexible(
+          child: TextField(
+            controller: _textController,
+            onSubmitted: _handleSubmit,
+            decoration: InputDecoration.collapsed(
+              hintText: 'Send a message',
             ),
           ),
-          IconButton(
-            icon: Icon(Icons.send),
-            onPressed: () {
+        ),
+        IconButton(
+          icon: Icon(Icons.send),
+          onPressed: () {
+          
+            if (ModalRoute.of(context)!.isCurrent) {
               _handleSubmit(_textController.text);
-              _showBottomSheet(context); // Show bottom sheet
-            },
-          ),
-        ],
-      ),
-    );
-  }
+            }
+            _showBottomSheet(context); 
+          },
+        ),
+      ],
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {

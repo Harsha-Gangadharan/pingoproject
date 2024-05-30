@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/User/expovote.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ArtExpo extends StatelessWidget {
@@ -30,7 +31,15 @@ class ArtExpo extends StatelessWidget {
                 Expanded(
                   child: Row(
                     children: <Widget>[
-                      _buildContainer(context, title: 'Conflict and Adversity'),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => Expovote()),
+                          );
+                        },
+                        child: _buildContainer(context, title: 'Conflict and Adversity'),
+                      ),
                       _buildContainer(context, title: 'Heroes and Leaders'),
                     ],
                   ),
@@ -61,6 +70,20 @@ class ArtExpo extends StatelessWidget {
         child: Center(
           child: Text(title),
         ),
+      ),
+    );
+  }
+}
+
+class ConflictAdversityScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Conflict and Adversity'),
+      ),
+      body: Center(
+        child: Text('This is the Conflict and Adversity screen'),
       ),
     );
   }

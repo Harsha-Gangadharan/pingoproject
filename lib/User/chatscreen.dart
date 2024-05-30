@@ -1,6 +1,10 @@
-import 'dart:math'; 
+import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/User/blockmessage.dart';
+import 'package:flutter_application_1/User/message.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:bottom_bar_with_sheet/bottom_bar_with_sheet.dart';
 
 class Chatscreen extends StatefulWidget {
   @override
@@ -12,57 +16,109 @@ class _ChatscreenState extends State<Chatscreen> {
     Message(senderName: "User name", message: "example", time: "Sent Just now"),
     Message(senderName: "example", message: "okay", time: "5w"),
     Message(senderName: "example", message: "Seen", time: ""),
-    Message(senderName: "example", message: "Mentioned you in their story", time: "7w"),
+    Message(
+        senderName: "example",
+        message: "Mentioned you in their story",
+        time: "7w"),
   ];
 
-  bool _isMuted = Random().nextBool(); 
-final GlobalKey _optionsKey = GlobalKey();
+  bool _isMuted = Random().nextBool();
+  void _showBottomSheet(BuildContext context) {
+    setState(() {
+      _isMuted = Random().nextBool();
+    });
 
-  // void _showOptions() => showModalBottomSheet(
-  //     context: context,
-  //     builder: (BuildContext builderContext) {
-  //       return Card(
-  //         elevation: 4,
-  //         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-  //         child: Column(
-  //           key: _optionsKey,
-  //           mainAxisAlignment: MainAxisAlignment.end,
-  //           crossAxisAlignment: CrossAxisAlignment.end,
-  //           mainAxisSize: MainAxisSize.min,
-  //           children: <Widget>[
-  //             RadioListTile<int>(
-  //               groupValue: _currentContent.contentType,
-  //               value: SimpleContent.header,
-  //               onChanged: (int value) {
-  //                 setState(() {
-  //                   _currentContent.contentType = value;
-  //                 });
-  //               },
-  //               title: Text(
-  //                 "Header",
-  //                 style: buildTextStyleBlack(14),
-  //               ),
-  //             ),
-  //             RadioListTile<int>(
-  //               groupValue: _currentContent.contentType,
-  //               value: SimpleContent.content,
-  //               onChanged: (int value) {
-  //                 setState(() {
-  //                   _currentContent.contentType = value;
-  //                 });
-  //               },
-  //               title: Text(
-  //                 "Content",
-  //                 style: buildTextStyleBlack(14),
-  //               ),
-  //             ),
-              
-             
-  //             _buildDoneButton()
-  //           ],
-  //         ),
-  //       );
-  //     });
+    List<String> chooseradio = [
+      'mute',
+      'block',
+    ];
+
+    String? curentindex;
+
+    showModalBottomSheet(
+        context: context,
+        builder: (context) => StatefulBuilder(
+              builder: (context, setState) {
+                return Container(
+                  padding: EdgeInsets.all(16),
+                  color: Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'User Name',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Column(
+                        children: [
+                          Row(
+                            children: [
+                              Radio(
+                                  value: chooseradio[0],
+                                  groupValue: curentindex,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      curentindex = value.toString();
+                                    });
+                                  }),
+                              Text('Mute'),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Radio(
+                                  value: chooseradio[1],
+                                  groupValue: curentindex,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      curentindex = value.toString();
+                                    });
+                                  }),
+                              Text('Block'),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Spacer(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                            SizedBox(width: 16),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _isMuted = false;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text('cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _isMuted = true;
+                              });
+                               Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => BlockMessage()),
+                      );
+                            },
+                            child: Text('until i changed'),
+                          ),
+                      
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,20 +150,28 @@ final GlobalKey _optionsKey = GlobalKey();
               ),
             ),
           ),
-    
           Expanded(
             child: ListView.builder(
               itemCount: messages.length,
               itemBuilder: (context, index) {
                 return ListTile(
-                  // onTap: () => _showBottomSheet(context),
+                  onTap: () => _showBottomSheet(context),
                   leading: SizedBox(
                     width: 50.0,
                     child: Container(
                       color: Colors.grey,
                     ),
                   ),
-                  title: Text(messages[index].senderName),
+                  title: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => MessageScreen()),
+                      );
+                    },
+                    child: Text(messages[index].senderName),
+                  ),
                   subtitle: Text(messages[index].message),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,

@@ -26,7 +26,7 @@ class FollowingList extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
          backgroundColor: const Color.fromARGB(131, 255, 64, 128),
-        title: Text('Fllowing'),
+        title: Text('Fllowers'),
          
         titleTextStyle: GoogleFonts.inknutAntiqua(
           fontSize: 26,

@@ -1,8 +1,14 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_application_1/User/package.dart';
 import 'package:flutter_application_1/User/proflie.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:random_string/random_string.dart';
 
 class EditProfile extends StatefulWidget {
@@ -12,7 +18,11 @@ class EditProfile extends StatefulWidget {
   State<EditProfile> createState() => _EditProfileState();
 }
 
+File? selectedImage;
+
 class _EditProfileState extends State<EditProfile> {
+  final _auth = FirebaseAuth.instance;
+
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _nameController = TextEditingController();
@@ -20,76 +30,94 @@ class _EditProfileState extends State<EditProfile> {
   final _bioController = TextEditingController();
   late String email = '';
   late String password = '';
-
-  Future<void> addFirebase(Map<String, dynamic> registeredUserInfoMap, String userId) async {
-    await FirebaseFirestore.instance.collection('user_registration').doc(userId).set(registeredUserInfoMap);
+  int maxLength = 10;
+  
+  Future<void> addFirebase(
+      Map<String, dynamic> registeredUserInfoMap, String userId) async {
+    await FirebaseFirestore.instance
+        .collection('user_registration')
+        .doc(userId)
+        .set(registeredUserInfoMap);
   }
 
-  Future<void> registerUser() async {
+  Future<void> updateProfile() async {
+    String id = _auth.currentUser!.uid;
     try {
-      final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      await FirebaseFirestore.instance
+          .collection('useregisteration')
+          .doc(id)
+          .update({
+        'name': _nameController.text,
+        'username': _usernameController.text,
+        'bio': _bioController.text,
+        'phoneNumber': _phoneNumberController.text,
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Registration Success'),
-        ),
+        const SnackBar(content: Text('Profile updated successfully')),
       );
-
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ProfilePage()));
-
-      final registeredUserId = randomAlphaNumeric(10);
-      final registerInfoMap = {
-        "name": _nameController.text,
-        "username": _usernameController.text,
-        "bio": _bioController.text,
-        "phoneNumber": _phoneNumberController.text,
-        "id": registeredUserId,
-      };
-
-      await addFirebase(registerInfoMap, registeredUserId);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Details added to Firebase successfully')),
-      );
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'enter phone number') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter phone number')),
-        );
-      } else if (e.code == 'username-already-in-use') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Username already in use')),
-        );
-      }
+      Navigator.push(context, MaterialPageRoute(builder: (context) =>  Packages(indexNum: 0,),));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('An error occurred')),
+        const SnackBar(content: Text('Failed to update profile')),
       );
     }
   }
 
-  void _showSuccessDialog() {
-    showDialog(
+  Future<void> _pickImage(ImageSource source) async {
+    final pickedImage = await ImagePicker().pickImage(source: source);
+    if (pickedImage == null) return;
+    setState(() {
+      selectedImage = File(pickedImage.path);
+    });
+  }
+
+  void _showImagePickerOptions(BuildContext context) {
+    showModalBottomSheet(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Success'),
-          content: const Text('Profile created successfully.'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ProfilePage()));
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: <Widget>[
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Photo Library'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _pickImage(ImageSource.gallery);
               },
-              child: const Text('OK'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('Camera'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _pickImage(ImageSource.camera);
+              },
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
+
+  Future<void> _uploadImage() async {
+    if (selectedImage != null) {
+      SettableMetadata metadata = SettableMetadata(contentType: 'image/jpeg');
+      final currenttime = TimeOfDay.now();
+      UploadTask uploadTask = FirebaseStorage.instance
+          .ref()
+          .child('shoapimage/shoap$currenttime')
+          .putFile(selectedImage!, metadata);
+      TaskSnapshot snapshot = await uploadTask;
+      String url = await snapshot.ref.getDownloadURL();
+      String id = _auth.currentUser!.uid;
+      await FirebaseFirestore.instance
+          .collection('useregisteration')
+          .doc(id)
+          .update({'image': url});
+    }
+  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -126,29 +154,44 @@ class _EditProfileState extends State<EditProfile> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    const Center(
-                      child: Icon(
-                        Icons.account_circle,
-                        size: 40,
+                    Center(
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                              fit: BoxFit.cover,
+                              image: selectedImage != null
+                                  ? FileImage(selectedImage!)
+                                  : AssetImage('asset/profile.png')
+                                      as ImageProvider<Object>),
+                          shape: BoxShape.circle,
+                          color: Colors.grey[300],
+                        ),
                       ),
                     ),
-                    SizedBox(height: 20.0),
+                    const SizedBox(height: 20.0),
                     Center(
-                      child: Text(
-                        'Add Profile Photo',
-                        style: GoogleFonts.inknutAntiqua(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                      child: TextButton(
+                        onPressed: () {
+                          _showImagePickerOptions(context);
+                        },
+                        child: Text(
+                          'Add Profile Photo',
+                          style: GoogleFonts.inknutAntiqua(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 20.0),
+                const SizedBox(height: 20.0),
                 TextFormField(
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   controller: _nameController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Name',
                     border: OutlineInputBorder(),
                     filled: true,
@@ -167,7 +210,7 @@ class _EditProfileState extends State<EditProfile> {
                 TextFormField(
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   controller: _usernameController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'User Name',
                     border: OutlineInputBorder(),
                     filled: true,
@@ -184,9 +227,10 @@ class _EditProfileState extends State<EditProfile> {
                 TextFormField(
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   controller: _phoneNumberController,
-                  decoration: InputDecoration(
+                  inputFormatters: [LengthLimitingTextInputFormatter(maxLength)],
+                  decoration: const InputDecoration(
                     labelText: 'Phone Number',
-                    prefixIcon: const Icon(Icons.phone),
+                    prefixIcon: Icon(Icons.phone),
                     border: OutlineInputBorder(),
                     filled: true,
                     fillColor: Color.fromARGB(220, 201, 197, 197),
@@ -202,9 +246,9 @@ class _EditProfileState extends State<EditProfile> {
                 TextFormField(
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   controller: _bioController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Bio',
-                    prefixIcon: const Icon(Icons.person),
+                    prefixIcon: Icon(Icons.person),
                     border: OutlineInputBorder(),
                     filled: true,
                     fillColor: Color.fromARGB(220, 201, 197, 197),
@@ -216,19 +260,19 @@ class _EditProfileState extends State<EditProfile> {
                     return null;
                   },
                 ),
-                SizedBox(height: 20.0),
+                const SizedBox(height: 20.0),
                 Center(
                   child: SizedBox(
                     height: 50.0,
                     child: ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
-                          _showSuccessDialog();
-                          registerUser();
+                          updateProfile();
+                          _uploadImage();
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color.fromARGB(255, 195, 60, 105),
+                        backgroundColor: const Color.fromARGB(255, 195, 60, 105),
                       ),
                       child: const Text(
                         'Add',

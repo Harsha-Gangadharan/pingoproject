@@ -3,14 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/User/newpost.dart';
-import 'package:flutter_application_1/User/package.dart';
 
-class BankDetailsPage extends StatefulWidget {
+class EditBankDetails extends StatefulWidget {
   @override
-  _BankDetailsPageState createState() => _BankDetailsPageState();
+  _EditBankDetailsState createState() => _EditBankDetailsState();
 }
 
-class _BankDetailsPageState extends State<BankDetailsPage> {
+class _EditBankDetailsState extends State<EditBankDetails> {
   final _formKey = GlobalKey<FormState>();
 
   final nameController = TextEditingController();
@@ -20,36 +19,63 @@ class _BankDetailsPageState extends State<BankDetailsPage> {
   final _auth = FirebaseAuth.instance;
   final firestore = FirebaseFirestore.instance;
   int maxLength = 10;
-
-  Future<void> bankDetailsadd() async {
-    try {
+  Future<DocumentSnapshot<Map<String, dynamic>>> getSelectedUserProfile() async {
+    String uid = FirebaseAuth.instance.currentUser!.uid;
+    return firestore.collection("addressdetails").doc(uid).get();
+  }
+  void _updateAddBankDetails() async {
+  if (_formKey.currentState!.validate()) {
+    String uid = FirebaseAuth.instance.currentUser!.uid;
       final gpay = gpayPhoneController.text;
-
-      String uid = _auth.currentUser!.uid;
-      await FirebaseFirestore.instance.collection('bankdetails').doc(uid).set({
-        'name': nameController.text,
+    await FirebaseFirestore.instance.collection("addressdetails").doc(uid).update({
+'name': nameController.text,
         'accountNumber': accountNumberController.text,
         'ifccode': ifscCodeController.text,
-        'gpayphonenumber': gpay,
-        'uid': uid,
-       
-      });
+        'gpayphonenumber': gpay,    
+    });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Bank details added successfully'),
-        ),
-      );
-      
-      Navigator.push(context, MaterialPageRoute(builder: (context) => Packages(indexNum: 0,),));
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to add bank details: $e'),
-        ),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Address details updated successfully'),
+      ),
+    );
+    //   Navigator.push(
+    //   context,
+    //   MaterialPageRoute(builder: (context) => CartPage()),
+    // );
   }
+}
+
+
+  // Future<void> bankDetailsadd() async {
+  //   try {
+  //     final gpay = gpayPhoneController.text;
+
+  //     String uid = _auth.currentUser!.uid;
+  //     await FirebaseFirestore.instance.collection('bankdetails').doc(uid).set({
+  //       'name': nameController.text,
+  //       'accountNumber': accountNumberController.text,
+  //       'ifccode': ifscCodeController.text,
+  //       'gpayphonenumber': gpay,
+  //       'uid': uid,
+       
+  //     });
+
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Bank details added successfully'),
+  //       ),
+  //     );
+      
+  //     Navigator.push(context, MaterialPageRoute(builder: (context) => NewPost()));
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Failed to add bank details: $e'),
+  //       ),
+  //     );
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +85,7 @@ class _BankDetailsPageState extends State<BankDetailsPage> {
           children: [
             Icon(Icons.account_balance),
             SizedBox(width: 10),
-            Text('Add Bank Details'),
+            Text('Edit Bank Details'),
           ],
         ),
       ),
@@ -166,7 +192,7 @@ class _BankDetailsPageState extends State<BankDetailsPage> {
                     ),
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        bankDetailsadd();
+                        _updateAddBankDetails;
                       }
                     },
                     child: Text(
