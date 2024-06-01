@@ -77,6 +77,7 @@ void toggile(){
         "image":'',
         "bio": '',
         "id": uid,
+        "selected category":[]
       };
       await addfirebase(registerinfomap, uid);
       const SnackBar(content: Text('details added to firebase successfully'));

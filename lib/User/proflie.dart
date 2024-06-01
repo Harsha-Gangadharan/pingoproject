@@ -8,13 +8,15 @@ import 'package:flutter_application_1/User/addaddress.dart';
 import 'package:flutter_application_1/User/addbankdetail.dart';
 import 'package:flutter_application_1/User/followerspage.dart';
 import 'package:flutter_application_1/User/notification.dart';
+import 'package:flutter_application_1/User/sellerorder.dart';
 import 'package:flutter_application_1/User/wishlist.dart';
 import 'package:flutter_application_1/User/yourorders.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  String id;
+   ProfilePage({Key? key,required this.id}) : super(key: key);
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -42,12 +44,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    String id = auth.currentUser!.uid;
+    // String id = auth.currentUser!.uid;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(183, 225, 56, 132),
         title: StreamBuilder<DocumentSnapshot>(
-          stream: firestore.collection('useregisteration').doc(id).snapshots(),
+          stream: firestore.collection('useregisteration').doc(widget.id).snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -129,7 +131,7 @@ class _ProfilePageState extends State<ProfilePage> {
               child: StreamBuilder<DocumentSnapshot>(
                 stream: firestore
                     .collection('useregisteration')
-                    .doc(id)
+                    .doc(widget.id)
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -164,7 +166,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           FutureBuilder<int>(
-                            future: getUserPostCount(id),
+                            future: getUserPostCount(widget.id),
                             builder: (context, snapshot) {
                               if (snapshot.connectionState ==
                                   ConnectionState.waiting) {
@@ -188,20 +190,44 @@ class _ProfilePageState extends State<ProfilePage> {
                               );
                             },
                           ),
-                          _buildStatColumn('Followers', '10K', () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => FollowingList()),
-                            );
-                          }),
-                          _buildStatColumn('Following', '50', () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => FollowingListPage()),
-                            );
-                          }),
+                          StreamBuilder<QuerySnapshot>(
+                            stream:  FirebaseFirestore.instance.collection('useregisteration').doc(FirebaseAuth.instance.currentUser!.uid).collection("Followers").snapshots(),
+                            builder: (context, snapshot) {
+                               if(snapshot.connectionState==ConnectionState.waiting){
+                                return SizedBox();
+                              }
+                              if(snapshot.hasData){
+                                return _buildStatColumn('Followers',  snapshot.data!.docs.length.toString(), () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => FollowingList()),
+                                );
+                              });
+                              }else{
+                                return SizedBox();
+                              }
+                            }
+                          ),
+                          StreamBuilder<QuerySnapshot>(
+                            stream:  FirebaseFirestore.instance.collection('useregisteration').doc(FirebaseAuth.instance.currentUser!.uid).collection("Following").snapshots(),
+                            builder: (context, snapshot) {
+                              if(snapshot.connectionState==ConnectionState.waiting){
+                                return SizedBox();
+                              }
+                              if(snapshot.hasData){
+                                return _buildStatColumn('Following',  snapshot.data!.docs.length.toString(), () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => FollowingListPage()),
+                                );
+                              });
+                              }else{
+                                return SizedBox();
+                              }
+                            }
+                          ),
                         ],
                       ),
                     ],
@@ -232,7 +258,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const Divider(),
             FutureBuilder(
-              future: getSelectedUserProfile(id),
+              future: getSelectedUserProfile(widget.id),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -340,7 +366,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 onTap: () {
                   print('Your Orders tapped');
 Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => YourOrder()));;
+                      MaterialPageRoute(builder: (context) => SellerOrderPage(uid: widget.id,)));;
                 },
               ),
               const SizedBox(height: 20),

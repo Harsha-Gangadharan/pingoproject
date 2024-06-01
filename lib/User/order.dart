@@ -1,97 +1,103 @@
+import 'dart:developer';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-class OrderPage extends StatefulWidget {
-  @override
-  State<OrderPage> createState() => _OrderPageState();
-}
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class _OrderPageState extends State<OrderPage> {
-  int _selectedIndex = 0;
+class OrderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-       appBar: AppBar(
-        backgroundColor: Color.fromARGB(183, 225, 56, 132),
-        title: Text('ORDERS'),
-        titleTextStyle: GoogleFonts.inknutAntiqua(
-          fontSize: 26,
-          color: Color.fromARGB(255, 14, 14, 14),
+      appBar: AppBar(
+        backgroundColor: const Color.fromARGB(183, 225, 56, 132),
+        title: Text(
+          'ORDERS',
+          style: GoogleFonts.inknutAntiqua(
+            fontSize: 26,
+            color: const Color.fromARGB(255, 14, 14, 14),
+          ),
         ),
-    
         actions: [
           IconButton(
-            icon: Icon(Icons.search),
+            icon: const Icon(Icons.search),
             onPressed: () {
               // Handle search button press
             },
           ),
         ],
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: [
-            // Order item 1
-            OrderListItem(
-              orderId: '123445577',
-              userName: 'username',
-              artName: 'Art Name',
-              artPrice: 700,
-              size: 'Free size',
-              quantity: 1,
-              sellerName: 'example',
-              hasDeliveryFee: false,
-            ),
-            // Order item 2
-            OrderListItem(
-              orderId: '123445578',
-              userName: 'username',
-              artName: 'Art Name',
-              artPrice: 1000,
-              size: 'Free size',
-              quantity: 2,
-              sellerName: 'example',
-              hasDeliveryFee: false,
-            ),
-            // Order item 3
-            OrderListItem(
-              orderId: '123445579',
-              userName: 'username',
-              artName: 'Art Name',
-              artPrice: 1500,
-              size: '',
-              quantity: 3,
-              sellerName: 'example',
-              hasDeliveryFee: false,
-            ),
-          ],
+        child: StreamBuilder<QuerySnapshot>(
+          stream:
+              FirebaseFirestore.instance.collection('cart_summary').where("uid",isEqualTo:FirebaseAuth.instance.currentUser!.uid).snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            List<DocumentSnapshot> documents = snapshot.data!.docs;
+            return ListView.builder(
+              itemCount: documents.length,
+              itemBuilder: (context, index) {
+                var data = documents[index].data() as Map<String, dynamic>;
+                var items = data['items'] as List<dynamic>? ?? [];
+                log(items.length.toString());
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics:const NeverScrollableScrollPhysics(),
+                    itemBuilder: (context, index2) {
+                      var item = items[index2] as Map<String, dynamic>? ?? {};
+                      var description = item['description'] as String? ?? 'No description';
+                      var productImage = item['productImage'] as String? ?? 'https://via.placeholder.com/150';
+                      var amount = (item['amount'] as num?)?.toDouble() ?? 0.0;
+                      var qty = (item['qty'] as num?)?.toInt() ?? 0;
+                      var sellerName = item['sellerName'] as String? ?? 'Unknown seller';
+                      var sellerImage = item['sellerImage'] as String? ?? 'https://via.placeholder.com/150';
+
+                      return Container(
+                        // height: 20,
+                        color: Colors.white,
+                        child: OrderListItem(
+                          description: description,
+                          productImage: productImage,
+                          amount: amount,
+                          qty: qty,
+                          sellerName: sellerName,
+                          sellerImage: sellerImage,
+                        ),
+                      );
+                    },
+                    separatorBuilder: (context, index) => const SizedBox(
+                          height: 10,
+                        ),
+                    itemCount: items.length);
+              },
+            );
+          },
         ),
       ),
-       
     );
   }
 }
 
 class OrderListItem extends StatelessWidget {
-  final String orderId;
-  final String userName;
-  final String artName;
-  final int artPrice;
-  final String size;
-  final int quantity;
+  final String description;
+  final String productImage;
+  final double amount;
+  final int qty;
   final String sellerName;
-  final bool hasDeliveryFee;
+  final String sellerImage;
 
   const OrderListItem({
     Key? key,
-    required this.orderId,
-    required this.userName,
-    required this.artName,
-    required this.artPrice,
-    required this.size,
-    required this.quantity,
+    required this.description,
+    required this.productImage,
+    required this.amount,
+    required this.qty,
     required this.sellerName,
-    required this.hasDeliveryFee,
+    required this.sellerImage,
   }) : super(key: key);
 
   @override
@@ -105,41 +111,46 @@ class OrderListItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Order ID: $orderId'),
-              Text('02th February'),
+              Text(
+                  '02th February'), // Static date, you can replace with dynamic value if needed
             ],
           ),
-          SizedBox(height: 10.0),
-          Text('Sold to: $userName'),
-          SizedBox(height: 10.0),
+          const SizedBox(height: 10.0),
+          Text('Sold to: $sellerName'),
+          const SizedBox(height: 10.0),
           Row(
             children: [
-              Text(artName),
-              Spacer(),
-              Text('\$$artPrice'),
+              Text(description),
+              const Spacer(),
+              Text('\u20B9$amount'),
             ],
           ),
-          SizedBox(height: 5.0),
+          const SizedBox(height: 5.0),
           Row(
             children: [
-              Text(size.isEmpty ? 'Size: Free size' : 'Size: $size'),
-              Spacer(),
-              Text('Qty: $quantity'),
+              Image.network(productImage,
+                  width: 50, height: 50), // Using product image from network
+              const Spacer(),
+              Text('Qty: $qty'),
             ],
           ),
-          SizedBox(height: 10.0),
+          const SizedBox(height: 10.0),
           Row(
             children: [
-              Text('Sold by:'),
-              Text(sellerName),
-              Spacer(),
-              if (!hasDeliveryFee) Text('Free delivery'),
+              CircleAvatar(
+                radius: 16,
+                backgroundImage: NetworkImage(sellerImage),
+              ),
+              const SizedBox(width: 10),
+              Text('Sold by: $sellerName'),
+              const Spacer(),
+              const Text('Free delivery'),
             ],
           ),
-          SizedBox(height: 10.0),
+          const SizedBox(height: 10.0),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -147,7 +158,7 @@ class OrderListItem extends StatelessWidget {
                 onPressed: () {
                   // Handle remove button press
                 },
-                child: Text('Remove'),
+                child: const Text('Remove'),
               ),
             ],
           ),

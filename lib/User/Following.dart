@@ -1,4 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/User/followerspage.dart';
 import 'package:google_fonts/google_fonts.dart';
 class FollowingList extends StatelessWidget {
   FollowingList({Key? key}) : super(key: key);
@@ -35,28 +38,43 @@ class FollowingList extends StatelessWidget {
       ),
        centerTitle: true,
       ),
-      body: ListView.builder(
-        itemCount: flowerImages.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: ListTile(
-              leading: CircleAvatar(
-                radius: 30.0,
-                backgroundImage: AssetImage(flowerImages[index]),
-                backgroundColor: Colors.grey[200],
-              ),
-              title: Text(
-                userNames[index],
-                style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
-              ),
-              trailing: ElevatedButton(
-                onPressed: () {
-                  print('Following button pressed for ${userNames[index]}');
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('useregisteration').doc(FirebaseAuth.instance.currentUser!.uid).collection("Followers").snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+          final following = snapshot.data!.docs;
+          return  following.isEmpty?Center(child: Text("No Followers"),): ListView.builder(
+            itemCount: following.length,
+            itemBuilder: (context, index) {
+           final followerID=following[index]["id"];
+
+              return FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('useregisteration')
+                    .doc(followerID)
+                    .get(),
+                builder: (context, userSnapshot) {
+                  if (!userSnapshot.hasData) {
+                    return SizedBox(); // Placeholder while loading
+                  }
+                  final userData = userSnapshot.data!.data() as Map<String, dynamic>?; // Explicit cast
+                  final userProfileImage = userData?['image'] as String?; // Explicit cast
+                  final username = userData?['username'] as String?; // Explicit cast
+
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: NetworkImage(userProfileImage ?? ''),
+                    ),
+                    title: Text(username ?? ''),
+                    // trailing: FollowButton(followerID: followerID),
+                  );
                 },
-                child: Text('Following'),
-              ),
-            ),
+              );
+            },
           );
         },
       ),

@@ -113,11 +113,17 @@ return ListTile(
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProfilePage(),
+              builder: (context) => ProfilePage(id: result["id"],),
             ),
           );
         }
       : () {
+         Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProfilePage(id: result["uid"],),
+            ),
+          );
           // Handle product tap if needed
         },
 );

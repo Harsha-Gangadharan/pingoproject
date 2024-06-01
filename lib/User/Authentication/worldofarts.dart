@@ -1,3 +1,7 @@
+import 'dart:developer';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/User/hompage.dart';
 import 'package:flutter_application_1/User/package.dart';
@@ -12,7 +16,28 @@ class Worldofarts extends StatefulWidget {
 
 class _WorldofartsState extends State<Worldofarts> {
   // Track which buttons are clicked
-  List<bool> isSelected = [false, false, false, false, false, false];
+  final _auth = FirebaseAuth.instance;
+  // List<bool> isSelected = [false, false, false, false, false, false];
+  // List<String> isSelectedItem = [
+  //   'Photo Realism',
+  //   'Abstract',
+  //   'Composite',
+  //   'Whimsical',
+  //   'Sculpture',
+  //   'Cubism',
+  // ];
+
+  List<Map<String, dynamic>> items = [
+    {"isSelected": false, "item": "Photo Realism"},
+    {"isSelected": false, "item": "Abstract"},
+    {"isSelected": false, "item": "Composite"},
+    {"isSelected": false, "item": "Whimsical"},
+    {"isSelected": false, "item": "Sculpture"},
+    {"isSelected": false, "item": "Cubism"}
+  ];
+Future updateUserCategory(List category)async{
+  FirebaseFirestore.instance.collection("useregisteration").doc(FirebaseAuth.instance.currentUser!.uid).update({"selected category":category});
+}
 
   @override
   Widget build(BuildContext context) {
@@ -47,11 +72,13 @@ class _WorldofartsState extends State<Worldofarts> {
                   ElevatedButton(
                     onPressed: () {
                       setState(() {
-                        isSelected[0] = !isSelected[0];
+                        items[0]["isSelected"] = !items[0]["isSelected"];
                       });
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isSelected[0] ? Colors.pink : const Color.fromARGB(142, 123, 120, 121),
+                      backgroundColor: items[0]["isSelected"]
+                          ? Colors.pink
+                          : const Color.fromARGB(142, 123, 120, 121),
                     ),
                     child: const Text(
                       'Photo Realism',
@@ -62,11 +89,13 @@ class _WorldofartsState extends State<Worldofarts> {
                   ElevatedButton(
                     onPressed: () {
                       setState(() {
-                        isSelected[1] = !isSelected[1];
+                        items[1]["isSelected"] = !items[1]["isSelected"];
                       });
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isSelected[1] ? Colors.pink : const Color.fromARGB(142, 123, 120, 121),
+                      backgroundColor: items[1]["isSelected"]
+                          ? Colors.pink
+                          : const Color.fromARGB(142, 123, 120, 121),
                     ),
                     child: const Text(
                       'Abstract',
@@ -80,11 +109,13 @@ class _WorldofartsState extends State<Worldofarts> {
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
-                      isSelected[2] = !isSelected[2];
+                      items[2]["isSelected"] = !items[2]["isSelected"];
                     });
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isSelected[2] ? Colors.pink : const Color.fromARGB(142, 123, 120, 121),
+                    backgroundColor: items[2]["isSelected"]
+                        ? Colors.pink
+                        : const Color.fromARGB(142, 123, 120, 121),
                   ),
                   child: const Text(
                     'Composite',
@@ -95,11 +126,13 @@ class _WorldofartsState extends State<Worldofarts> {
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
-                      isSelected[3] = !isSelected[3];
+                      items[3]["isSelected"] = !items[3]["isSelected"];
                     });
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isSelected[3] ? Colors.pink : const Color.fromARGB(142, 123, 120, 121),
+                    backgroundColor: items[3]["isSelected"]
+                        ? Colors.pink
+                        : const Color.fromARGB(142, 123, 120, 121),
                   ),
                   child: const Text(
                     'Whimsical',
@@ -112,11 +145,13 @@ class _WorldofartsState extends State<Worldofarts> {
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
-                      isSelected[4] = !isSelected[4];
+                      items[4]["isSelected"] = !items[4]["isSelected"];
                     });
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isSelected[4] ? Colors.pink : const Color.fromARGB(142, 123, 120, 121),
+                    backgroundColor: items[4]["isSelected"]
+                        ? Colors.pink
+                        : const Color.fromARGB(142, 123, 120, 121),
                   ),
                   child: const Text(
                     'Sculpture',
@@ -127,11 +162,13 @@ class _WorldofartsState extends State<Worldofarts> {
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
-                      isSelected[5] = !isSelected[5];
+                      items[5]["isSelected"] = !items[5]["isSelected"];
                     });
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isSelected[5] ? Colors.pink : Color.fromARGB(142, 123, 120, 121),
+                    backgroundColor: items[5]["isSelected"]
+                        ? Colors.pink
+                        : Color.fromARGB(142, 123, 120, 121),
                   ),
                   child: const Text(
                     'Cubism',
@@ -144,7 +181,24 @@ class _WorldofartsState extends State<Worldofarts> {
               ),
               ElevatedButton(
                 onPressed: () {
-                 Navigator.push(context,MaterialPageRoute(builder: (context) => Packages(indexNum: 0,),));
+                  final selectedItemslist = items
+                      .where((element) => element["isSelected"] == true)
+                      .toList();
+                  List<String> myList = [];
+                  for (var i in selectedItemslist) {
+                    myList.add(i["item"]);
+                  }
+                  log(myList.toString());
+updateUserCategory(myList).then((value) => 
+ Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Packages(
+                          indexNum: 0,
+                        ),
+                      )));
+                  
+                
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color.fromARGB(142, 123, 120, 121),

@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_application_1/Admin/expopayment.dart';
+import 'package:flutter_application_1/Admin/home.dart';
+import 'package:flutter_application_1/Admin/payment.dart';
 import 'package:flutter_application_1/User/buynowpage.dart';
 import 'package:flutter_application_1/User/cartpage.dart';
 import 'package:flutter_application_1/User/chatscreen.dart';
@@ -29,6 +32,37 @@ class _AdminExpoState extends State<AdminExpo> {
   final _auth = FirebaseAuth.instance;
   final firestore = FirebaseFirestore.instance;
   
+  
+  Future<void> ExpoDetailsadd() async {
+    try {
+      
+
+      String uid = _auth.currentUser!.uid;
+    final doc=  await FirebaseFirestore.instance.collection('expo').doc();
+doc.set({
+        'title': TitleController.text,
+        'date': DateController.text,
+        'Vote': VoteController.text,
+        'Price':PriceController.text,
+        'uid': uid,
+        "expoId":doc.id
+       
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Bank details added successfully'),
+        ),
+      );
+      
+      Navigator.push(context, MaterialPageRoute(builder: (context) => AdHome()));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to add bank details: $e'),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +232,9 @@ class _AdminExpoState extends State<AdminExpo> {
         backgroundColor: Color.fromARGB(255, 195, 60, 105),
       ),
       onPressed: () async {
-      
+       if (_formKey.currentState!.validate()) {
+                        ExpoDetailsadd();
+                      }
       },
       child: Text(
         'Add',

@@ -83,14 +83,8 @@ class _CartPaymentState extends State<CartPayment> {
 log(widget.totalPay.toString());
                         showModalBottomSheet(
                           showDragHandle: true,
-                          context: context, builder: (context) =>ShowPaymentoptions(totalAMount: widget.totalPay,),);
-                      //   setState(() {
-                      //     selectedOption = 0;
-                      //   });
-                      //   paymentController.initiateTransaction(
-                      //     price: widget.totalPay,
-                      //     receiverName: "logitrack",
-                      //   );
+                          context: context, builder: (context) =>ShowPaymentoptions(totalAMount: widget.totalPay,page: "User",),);
+                    
                       },
                     ),
           // FutureBuilder<UpiApp>(
@@ -227,7 +221,7 @@ class PaymentOption extends StatelessWidget {
         height: 60,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: selected ? Colors.pink : Colors.white,
+          color: selected ? Colors.pink: Colors.white,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: selected ? Colors.transparent : Colors.grey),
         ),

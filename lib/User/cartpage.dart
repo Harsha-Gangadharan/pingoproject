@@ -6,20 +6,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/User/cartpaymentmethod.dart';
 import 'package:flutter_application_1/User/editaddress.dart';
+import 'package:flutter_application_1/User/package.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class CartPage extends StatefulWidget {
   @override
   _CartPageState createState() => _CartPageState();
 }
-double totalAm = 0.0;
+
 class _CartPageState extends State<CartPage> {
   bool isOrderPlaced = false;
   late String currentUserId;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   Map<String, int> quantities = {};
   Map<String, double> itemPrices = {};
-  
+  double total = 0.0;
 
   @override
   void initState() {
@@ -28,30 +29,38 @@ class _CartPageState extends State<CartPage> {
     if (user != null) {
       currentUserId = user.uid;
     }
-    
+    fetchCartItems();
   }
 
-double total=0;
-Future<double>   calculateTotalAm(double totPrice)async {
-
-  log("helooooooooooo");
-    quantities.forEach((productId, quantity) {
-      double? itemPrice = itemPrices[productId];
-      if (itemPrice != null) {
-        totPrice += quantity * itemPrice;
-       total+= quantity * itemPrice;
-       log(total.toString());
-      }
-    });
-   
-    return  totPrice;
-  }
-
-  Stream<QuerySnapshot> getCartItems() {
-    return FirebaseFirestore.instance
+  Future<void> fetchCartItems() async {
+    FirebaseFirestore.instance
         .collection('cart')
         .where('uid', isEqualTo: currentUserId)
-        .snapshots();
+        .snapshots()
+        .listen((snapshot) async {
+      double newTotal = 0.0;
+      Map<String, int> newQuantities = {};
+      Map<String, double> newItemPrices = {};
+
+      for (var cartItem in snapshot.docs) {
+        var productId = cartItem['productId'];
+        var qty = cartItem['qty'];
+        newQuantities[productId] = qty;
+
+        var productSnapshot = await getProductDetails(productId);
+        var productData = productSnapshot.data();
+        if (productData != null) {
+          newItemPrices[productId] = productData["amount"].toDouble();
+          newTotal += qty * productData["amount"].toDouble();
+        }
+      }
+
+      setState(() {
+        quantities = newQuantities;
+        itemPrices = newItemPrices;
+        total = newTotal;
+      });
+    });
   }
 
   Future<DocumentSnapshot<Map<String, dynamic>>> getProductDetails(String productId) {
@@ -68,10 +77,7 @@ Future<double>   calculateTotalAm(double totPrice)async {
 
   Future<void> removeProduct(String productId) async {
     await FirebaseFirestore.instance.collection('cart').doc(productId).delete();
-    setState(() {
-      quantities.remove(productId);
-      itemPrices.remove(productId);
-    });
+    fetchCartItems(); // Re-fetch the cart items to update the state
   }
 
   Future<void> updateCartQuantity(String productId, int incrementBy) async {
@@ -84,10 +90,7 @@ Future<double>   calculateTotalAm(double totPrice)async {
         int newQty = currentQty + incrementBy;
 
         await docRef.update({'qty': newQty});
-        print('Document successfully updated');
-        setState(() {
-          quantities[productId] = newQty;
-        });
+        fetchCartItems(); // Re-fetch the cart items to update the state
       } else {
         print('Document does not exist');
       }
@@ -144,7 +147,10 @@ Future<double>   calculateTotalAm(double totPrice)async {
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: getCartItems(),
+              stream: FirebaseFirestore.instance
+                  .collection('cart')
+                  .where('uid', isEqualTo: currentUserId)
+                  .snapshots(),
               builder: (context, cartSnapshot) {
                 if (cartSnapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -152,12 +158,6 @@ Future<double>   calculateTotalAm(double totPrice)async {
                 if (!cartSnapshot.hasData || cartSnapshot.data!.docs.isEmpty) {
                   return const Center(child: Text('No items in the cart'));
                 }
-
-                cartSnapshot.data!.docs.forEach((cartItem) {
-                  var productId = cartItem['productId'];
-                  var qty = cartItem['qty'];
-                  quantities[productId] = qty;
-                });
 
                 return ListView.builder(
                   itemCount: cartSnapshot.data!.docs.length,
@@ -179,7 +179,7 @@ Future<double>   calculateTotalAm(double totPrice)async {
                         if (productData == null) {
                           return const Center(child: Text('Product data not available'));
                         }
-//////here is the issue
+
                         itemPrices[productId] = productData["amount"].toDouble();
 
                         return buildShoppingCartItem(productData, productId, qty);
@@ -191,7 +191,7 @@ Future<double>   calculateTotalAm(double totPrice)async {
             ),
           ),
           const SizedBox(height: 10),
-          buildTotalSection(totalAm),
+          buildTotalSection(),
           const SizedBox(height: 10.0),
           Center(
             child: SizedBox(
@@ -262,7 +262,7 @@ Future<double>   calculateTotalAm(double totPrice)async {
                                           });
                                           Navigator.pop(context);
                                         },
-                                        child: const Text('cancel'),
+                                        child: const Text('Cancel'),
                                       ),
                                     ],
                                   ),
@@ -293,12 +293,15 @@ Future<double>   calculateTotalAm(double totPrice)async {
           ),
         ],
       ),
+        bottomNavigationBar: MyNav(index:0, onTap: (index){
+  setState(() {
+Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context)=>Packages(indexNum: index)))   ;       });
+       }, firestore:  FirebaseFirestore.instance, auth: FirebaseAuth.instance),
     );
   }
 
   Widget buildShoppingCartItem(Map<String, dynamic>? productData, String productId, int qty) {
-      if (productData == null || productData.isEmpty) {
-
+    if (productData == null || productData.isEmpty) {
       return const SizedBox.shrink(); // Return an empty SizedBox if product data is null
     }
     return Container(
@@ -411,25 +414,16 @@ Future<double>   calculateTotalAm(double totPrice)async {
     );
   }
 
-  Widget buildTotalSection(double totalAm) {
+  Widget buildTotalSection() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: FutureBuilder(
-        future: calculateTotalAm(totalAm),
-        builder: (context,snap) {
-          if(snap.connectionState==ConnectionState.waiting){
-            return SizedBox();
-          }
-          return Column(
-            children: [
-              Text(
-                'Total Price: \u20B9${
-                  total}',
-                style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
-              ),
-            ],
-          );
-        }
+      child: Column(
+        children: [
+          Text(
+            'Total Price: \u20B9$total',
+            style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+          ),
+        ],
       ),
     );
   }

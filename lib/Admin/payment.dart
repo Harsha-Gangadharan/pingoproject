@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/User/orderconfirmed.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ExpoPayment extends StatefulWidget {
+class ExpoPay extends StatefulWidget {
   @override
-  _ExpoPaymentState createState() => _ExpoPaymentState();
+  _ExpoPayState createState() => _ExpoPayState();
 }
 
-class _ExpoPaymentState extends State<ExpoPayment> {
+class _ExpoPayState extends State<ExpoPay> {
   int _paymentMethod = 0; // 0 for pay online, 1 for cash on delivery
 int _selectedIndex = 0;
   @override

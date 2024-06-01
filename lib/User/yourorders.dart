@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class YourOrder extends StatelessWidget {
-  const YourOrder({Key? key}) : super(key: key);
+class YourOrderDetails extends StatelessWidget {
+  var orderDetail;
+  
+   YourOrderDetails({Key? key,required this.orderDetail,}) : super(key: key);
 
   @override
 Widget build(BuildContext context) {

@@ -36,11 +36,11 @@ class _SplashScreenState extends State<SplashScreen> {
   check() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     String? name = preferences.getString('islogin');
-    if (name != null) {
-     Navigator.push(context,MaterialPageRoute(builder: (context) => Packages(indexNum: 0,),));
+    if (name != null) {Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Packages(indexNum: 0,),), (route) => false);
+    //  Navigator.push(context,MaterialPageRoute(builder: (context) => Packages(indexNum: 0,),));
     } else {
-      Navigator.push(
-          context, MaterialPageRoute(builder: (context) => Welcome()));
+      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Welcome(),), (route) => false);
+  
     }
   }
   

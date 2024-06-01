@@ -1,10 +1,10 @@
 import 'dart:developer';
-import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/User/proflie.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'buynowpage.dart';
@@ -32,11 +32,29 @@ class _HomeState extends State<Home> {
     isLikedList = List.generate(10, (index) => false);
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> getAllPost() {
-    return FirebaseFirestore.instance.collection("productdetails").snapshots();
+  List userCategory = [];
+  getuserCategory() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection("useregisteration")
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .get();
+    if (snapshot.exists) {
+      userCategory = snapshot.data()!["selected category"];
+      log(userCategory.toString());
+    }
   }
 
-  Future<DocumentSnapshot<Map<String, dynamic>>> getSelectedUserProfile(String id) async {
+  Stream<QuerySnapshot<Map<String, dynamic>>> getAllPost() {
+    // getuserCategory();
+    // return FirebaseFirestore.instance.collection("productdetails").snapshots();
+    return FirebaseFirestore.instance
+        .collection("productdetails")
+        .where("category", whereIn: List.from(userCategory))
+        .snapshots();
+  }
+
+  Future<DocumentSnapshot<Map<String, dynamic>>> getSelectedUserProfile(
+      String id) async {
     return await FirebaseFirestore.instance
         .collection("useregisteration")
         .doc(id)
@@ -61,7 +79,8 @@ class _HomeState extends State<Home> {
         .where('uid', isEqualTo: uid)
         .where('productId', isEqualTo: productId);
 
-    final QuerySnapshot<Map<String, dynamic>> favoriteDoc = await wishlistRef.get();
+    final QuerySnapshot<Map<String, dynamic>> favoriteDoc =
+        await wishlistRef.get();
 
     if (favoriteDoc.docs.isNotEmpty) {
       // Remove from wishlist
@@ -85,77 +104,137 @@ class _HomeState extends State<Home> {
       liked = isLiked;
     });
   }
-  void _toggleFollowing(String userId) async {
-  final currentUserId = FirebaseAuth.instance.currentUser!.uid;
-  final followersRef = FirebaseFirestore.instance.collection('followers').doc(userId);
 
-  final followersDoc = await followersRef.get();
-  if (followersDoc.exists) {
-    // If the document already exists, update the "following" field
-    List<String> followingList = List<String>.from(followersDoc.data()!['following'] ?? []);
-    if (followingList.contains(currentUserId)) {
-      // If the current user is already in the following list, remove them
-      followingList.remove(currentUserId);
+  Stream<DocumentSnapshot<Map<String, dynamic>>> cheCkTheUserIsAlreadyFollowed(
+      anothorUserId) {
+    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+    return FirebaseFirestore.instance
+        .collection("useregisteration")
+        .doc(currentUserId)
+        .collection("Following")
+        .doc(anothorUserId)
+        .snapshots();
+  }
+
+  followUser(anothorUserId) async {
+    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+
+// final snapshot=await FirebaseFirestore.instance
+//         .collection("followers")
+//         .doc(currentUserId+anothorUserId).get();
+// List followersList=[];
+//         if(snapshot.exists){
+
+// final foo=snapshot.data()!["Followers"] as List;
+// followersList=foo.map((e) => e).toList();
+//         }
+// followersList.add(anothorUserId);
+    final collection =
+        FirebaseFirestore.instance.collection("useregisteration");
+    collection
+        .doc(currentUserId)
+        .collection("Following")
+        .doc(anothorUserId)
+        .set({"id": anothorUserId});
+    collection
+        .doc(anothorUserId)
+        .collection("Followers")
+        .doc(currentUserId)
+        .set({"id": currentUserId});
+  }
+
+  unFollow(anothorUserId) async {
+    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+    final collection =
+        FirebaseFirestore.instance.collection("useregisteration");
+    collection
+        .doc(currentUserId)
+        .collection("Following")
+        .doc(anothorUserId)
+        .delete();
+    collection
+        .doc(anothorUserId)
+        .collection("Followers")
+        .doc(currentUserId)
+        .delete();
+  }
+
+  // void _toggleFollowing(String userId) async {
+  //   final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+  //   final followersRef =
+  //       FirebaseFirestore.instance.collection('followers').doc(currentUserId);
+
+  //   final followersDoc = await followersRef.get();
+  //   if (followersDoc.exists) {
+  //     // If the document already exists, update the "following" field
+  //     List<String> followingList =
+  //         List<String>.from(followersDoc.data()!['following'] ?? []);
+  //     if (followingList.contains(currentUserId)) {
+  //       // If the current user is already in the following list, remove them
+  //       followingList.remove(currentUserId);
+  //     } else {
+  //       // Otherwise, add the current user to the following list
+  //       followingList.add(userId);
+  //     }
+  //     await followersRef.update({'Followers': followingList});
+  //   } else {
+  //     // If the document does not exist, create a new one
+  //     await followersRef.set({
+  //       'following': [currentUserId]
+  //     });
+  //   }
+  // }
+
+  Future<bool> isProductInCart(String productId) async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final cartRef = FirebaseFirestore.instance
+        .collection('cart')
+        .where('uid', isEqualTo: uid)
+        .where('productId', isEqualTo: productId);
+
+    final cartDoc = await cartRef.get();
+    return cartDoc.docs.isNotEmpty;
+  }
+
+  Future<void> _toggleCart(
+      String productId, Map<String, dynamic> productData) async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final cartRef = FirebaseFirestore.instance
+        .collection('cart')
+        .where('uid', isEqualTo: uid)
+        .where('productId', isEqualTo: productId);
+
+    final QuerySnapshot<Map<String, dynamic>> cartDoc = await cartRef.get();
+
+    if (cartDoc.docs.isNotEmpty) {
+      // Remove from cart
+      await cartDoc.docs.first.reference.delete();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Item removed from cart'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     } else {
-      // Otherwise, add the current user to the following list
-      followingList.add(currentUserId);
+      // Add to cart
+      await FirebaseFirestore.instance.collection('cart').doc(productId).set({
+        'productId': productId,
+        'uid': uid,
+        'productData': productData,
+        'qty': 1,
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Item added to cart'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
-    await followersRef.update({'following': followingList});
-  } else {
-    // If the document does not exist, create a new one
-    await followersRef.set({'following': [currentUserId]});
-  }
-}
-Future<bool> isProductInCart(String productId) async {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-  final cartRef = FirebaseFirestore.instance
-      .collection('cart')
-      .where('uid', isEqualTo: uid)
-      .where('productId', isEqualTo: productId);
 
-  final cartDoc = await cartRef.get();
-  return cartDoc.docs.isNotEmpty;
-}
-Future<void> _toggleCart(String productId, Map<String, dynamic> productData) async {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-  final cartRef = FirebaseFirestore.instance
-      .collection('cart')
-      .where('uid', isEqualTo: uid)
-      .where('productId', isEqualTo: productId);
-
-  final QuerySnapshot<Map<String, dynamic>> cartDoc = await cartRef.get();
-
-  if (cartDoc.docs.isNotEmpty) {
-    // Remove from cart
-    await cartDoc.docs.first.reference.delete();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Item removed from cart'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  } else {
-    // Add to cart
-    await FirebaseFirestore.instance.collection('cart').doc(productId).set({
-      'productId': productId,
-      'uid': uid,
-      'productData': productData,
-      'qty':1,
+    setState(() {
+      // Refresh the state to update the UI
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Item added to cart'),
-        duration: Duration(seconds: 2),
-      ),
-    );
   }
-
-  setState(() {
-    // Refresh the state to update the UI
-  });
-}
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -177,17 +256,15 @@ Future<void> _toggleCart(String productId, Map<String, dynamic> productData) asy
                 MaterialPageRoute(builder: (context) => Chatscreen()),
               );
             },
-            icon: Icon(Icons.comment_rounded),
+            icon: const Icon(Icons.comment_rounded),
             color: Colors.black,
           ),
           IconButton(
             onPressed: () {
-             Navigator.push(
-                context,
-               MaterialPageRoute(builder: (context) => CartPage())
-              );
+              Navigator.push(
+                  context, MaterialPageRoute(builder: (context) => CartPage()));
             },
-            icon: Icon(Icons.shopping_cart),
+            icon: const Icon(Icons.shopping_cart),
             color: Colors.black,
           ),
           IconButton(
@@ -197,252 +274,369 @@ Future<void> _toggleCart(String productId, Map<String, dynamic> productData) asy
                 MaterialPageRoute(builder: (context) => ArtExpo()),
               );
             },
-            icon: Icon(Icons.palette),
+            icon: const Icon(Icons.palette),
             color: Colors.black,
           ),
         ],
       ),
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: getAllPost(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(),
+      body: FutureBuilder(
+          future: getuserCategory(),
+          builder: (context, categoryNsap) {
+            if (categoryNsap.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+            return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: getAllPost(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+                final data = snapshot.data!.docs;
+
+                return data.isEmpty
+                    ? const Center(
+                        child: Text("No Posts"),
+                      )
+                    : Column(
+                        children: [
+                          Expanded(
+                            child: ListView.builder(
+                              scrollDirection: Axis.vertical,
+                              itemCount: data.length,
+                              itemBuilder: (context, index) {
+                                return FutureBuilder<
+                                    DocumentSnapshot<Map<String, dynamic>>>(
+                                  future: getSelectedUserProfile(
+                                      data[index]["uid"]),
+                                  builder: (context, userSnapshot) {
+                                    if (userSnapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return const SizedBox();
+                                    }
+
+                                    final userData = userSnapshot.data!.data();
+
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            InkWell(
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        ProfilePage(
+                                                      id: userData?["id"],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              child: CircleAvatar(
+                                                backgroundImage: NetworkImage(
+                                                    userData?["image"] ?? ""),
+                                                radius: 20,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              userData?["username"] ?? "",
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const Spacer(),
+                                            data[index]["uid"] ==
+                                                    FirebaseAuth.instance
+                                                        .currentUser!.uid
+                                                ? const SizedBox()
+                                                : StreamBuilder(
+                                                    stream:
+                                                        cheCkTheUserIsAlreadyFollowed(
+                                                            data[index]["uid"]),
+                                                    builder:
+                                                        (context, snapshot) {
+                                                      // bool following=false;
+
+                                                      // if (snapshot.hasData) {
+                                                      //   log("true");
+                                                      //   following = true;
+                                                      // } else {
+                                                      //   log("false");
+                                                      //   following = false;
+                                                      // }
+                                                     if(snapshot.hasData){
+                                                       return ElevatedButton(
+                                                        onPressed: () {
+
+
+
+                                                          
+                                                         if(snapshot.data!.exists){
+                                                          unFollow(data[index]
+                                                              [
+                                                              "uid"]);
+
+                                                         }else{
+                                                           followUser(data[index]
+                                                              [
+                                                              "uid"]);
+                                                         }
+                                                        },
+                                                        style: ElevatedButton
+                                                            .styleFrom(
+                                                          backgroundColor:
+                                                              snapshot.data!.exists
+                                                                  ? Colors.blue
+                                                                      .shade300
+                                                                  : Colors.grey,
+                                                        ),
+                                                        child: Text(
+                                                          snapshot.data!.exists
+                                                              ? 'Following'
+                                                              : 'Follow',
+                                                          style: const TextStyle(
+                                                              color:
+                                                                  Colors.black),
+                                                        ),
+                                                      );
+                                                     }else{
+                                                      return SizedBox();
+                                                     }
+                                                    }),
+                                            PopupMenuButton(
+                                              itemBuilder:
+                                                  (BuildContext context) {
+                                                return [
+                                                  const PopupMenuItem(
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons.share),
+                                                        Text('Share')
+                                                      ],
+                                                    ),
+                                                    value: 'Share',
+                                                  ),
+                                                  const PopupMenuItem(
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons.delete),
+                                                        Text('Delete')
+                                                      ],
+                                                    ),
+                                                    value: 'Delete',
+                                                  ),
+                                                  const PopupMenuItem(
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons.message),
+                                                        Text('Send Message')
+                                                      ],
+                                                    ),
+                                                    value: 'Send Message',
+                                                  ),
+                                                  const PopupMenuItem(
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons.report),
+                                                        Text('Report')
+                                                      ],
+                                                    ),
+                                                    value: 'Report',
+                                                  ),
+                                                ];
+                                              },
+                                              onSelected: (value) {
+                                                switch (value) {
+                                                  case 'Share':
+                                                    // Handle Share action
+                                                    break;
+                                                  case 'Unfollow':
+                                                    // Handle Unfollow action
+                                                    break;
+                                                  case 'Report':
+                                                    _showReportBottomSheet(); // Show bottom sheet for report
+                                                    break;
+                                                  default:
+                                                }
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Container(
+                                          height: 400,
+                                          width: double.infinity,
+                                          margin: const EdgeInsets.symmetric(
+                                              horizontal: 10),
+                                          decoration: BoxDecoration(
+                                            image: DecorationImage(
+                                              image: NetworkImage(
+                                                  data[index]["productimage"]),
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          data[index]["description"] ??
+                                              "", // Fetch and display description
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.normal,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            FutureBuilder<bool>(
+                                              future: isProductInWishlist(
+                                                  data[index].id),
+                                              builder: (context, snapshot) {
+                                                if (snapshot.connectionState ==
+                                                    ConnectionState.waiting) {
+                                                  return const IconButton(
+                                                    icon: Icon(
+                                                        Icons.favorite_border),
+                                                    onPressed: null,
+                                                  );
+                                                }
+                                                bool isLiked =
+                                                    snapshot.data ?? false;
+                                                return IconButton(
+                                                  onPressed: () {
+                                                    _toggleFavorite(
+                                                        data[index].id);
+                                                  },
+                                                  icon: Icon(
+                                                    isLiked
+                                                        ? Icons.favorite
+                                                        : Icons.favorite_border,
+                                                    color: isLiked
+                                                        ? Colors.red
+                                                        : null,
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                            IconButton(
+                                              onPressed: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        ReviewPage(
+                                                      userProfileImage:
+                                                          userData?["image"] ??
+                                                              "",
+                                                      userName: userData?[
+                                                              "username"] ??
+                                                          "",
+                                                      productImage: data[index]
+                                                          ["productimage"],
+                                                      productId: data[index]
+                                                          ['productId'],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              icon:
+                                                  const Icon(Icons.comment_outlined),
+                                            ),
+                                            Text(
+                                              '\u20B9 ${data[index]["amount"]}', // Add the rupee symbol as a prefix
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            ElevatedButton(
+                                              onPressed: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          BuynowPage(
+                                                            productId: data[
+                                                                    index]
+                                                                ['productId'],
+                                                            userProfileImage:
+                                                                userData?[
+                                                                        "image"] ??
+                                                                    "",
+                                                            userName: userData?[
+                                                                    "username"] ??
+                                                                "",
+                                                          )),
+                                                );
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    const Color.fromARGB(
+                                                        255, 195, 60, 105),
+                                              ),
+                                              child: Text(
+                                                'Buy Now',
+                                                style:
+                                                    GoogleFonts.inknutAntiqua(
+                                                        color: Colors.white),
+                                              ),
+                                            ),
+                                            FutureBuilder<bool>(
+                                              future: isProductInCart(
+                                                  data[index].id),
+                                              builder: (context, snapshot) {
+                                                if (snapshot.connectionState ==
+                                                    ConnectionState.waiting) {
+                                                  return const IconButton(
+                                                    icon: Icon(Icons
+                                                        .add_shopping_cart),
+                                                    onPressed: null,
+                                                  );
+                                                }
+                                                bool isInCart =
+                                                    snapshot.data ?? false;
+                                                return IconButton(
+                                                  onPressed: () {
+                                                    _toggleCart(data[index].id,
+                                                        data[index].data());
+                                                  },
+                                                  icon: Icon(
+                                                    isInCart
+                                                        ? Icons
+                                                            .remove_shopping_cart
+                                                        : Icons
+                                                            .add_shopping_cart,
+                                                    color: isInCart
+                                                        ? Colors.red
+                                                        : null,
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 20),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      );
+              },
             );
-          }
-          final data = snapshot.data!.docs;
-
-          return Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  scrollDirection: Axis.vertical,
-                  itemCount: data.length,
-                  itemBuilder: (context, index) {
-                    return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                      future: getSelectedUserProfile(data[index]["uid"]),
-                      builder: (context, userSnapshot) {
-                        if (userSnapshot.connectionState == ConnectionState.waiting) {
-                          return SizedBox();
-                        }
-
-                        final userData = userSnapshot.data!.data();
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundImage: NetworkImage(userData?["image"] ?? ""),
-                                  radius: 20,
-                                ),
-                                SizedBox(width: 10),
-                                Text(
-                                  userData?["username"] ?? "",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Spacer(),
-ElevatedButton(
-  onPressed: () {
-    _toggleFollowing(data[index]["uid"]); // Call _toggleFollowing with the target user's ID
-    setState(() {
-      isFollowingList[index] = !isFollowingList[index];
-    });
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: isFollowingList[index]
-      ? Colors.blue.shade300
-      : Colors.grey,
-  ),
-  child: Text(
-    isFollowingList[index]
-      ? 'Following'
-      : 'Follow',
-    style: TextStyle(color: Colors.black),
-  ),
-),
-
-                                PopupMenuButton(
-                                  itemBuilder: (BuildContext context) {
-                                    return [
-                                      const PopupMenuItem(
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.share),
-                                            Text('Share')
-                                          ],
-                                        ),
-                                        value: 'Share',
-                                      ),
-                                      const PopupMenuItem(
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.person_off),
-                                            Text('Unfollow')
-                                          ],
-                                        ),
-                                        value: 'Unfollow',
-                                      ),
-                                      const PopupMenuItem(
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.message),
-                                            Text('Send Message')
-                                          ],
-                                        ),
-                                        value: 'Send Message',
-                                      ),
-                                      const PopupMenuItem(
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.report),
-                                            Text('Report')
-                                          ],
-                                        ),
-                                        value: 'Report',
-                                      ),
-                                    ];
-                                  },
-                                  onSelected: (value) {
-                                    switch (value) {
-                                      case 'Share':
-                                        // Handle Share action
-                                        break;
-                                      case 'Unfollow':
-                                        // Handle Unfollow action
-                                        break;
-                                      case 'Report':
-                                        _showReportBottomSheet(); // Show bottom sheet for report
-                                        break;
-                                      default:
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 10),
-                            Container(
-                              height: 400,
-                              width: double.infinity,
-                              margin: const EdgeInsets.symmetric(horizontal: 10),
-                              decoration: BoxDecoration(
-                                image: DecorationImage(
-                                  image: NetworkImage(data[index]["productimage"]),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                              SizedBox(height: 10),
-    Text(
-      data[index]["description"] ?? "", // Fetch and display description
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.normal,
-      ),
-    ),
-                            SizedBox(height: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                FutureBuilder<bool>(
-                                  future: isProductInWishlist(data[index].id),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState == ConnectionState.waiting) {
-                                      return IconButton(
-                                        icon: Icon(Icons.favorite_border),
-                                        onPressed: null,
-                                      );
-                                    }
-                                    bool isLiked = snapshot.data ?? false;
-                                    return IconButton(
-                                      onPressed: () {
-                                        _toggleFavorite(data[index].id);
-                                      },
-                                      icon: Icon(
-                                        isLiked ? Icons.favorite : Icons.favorite_border,
-                                        color: isLiked ? Colors.red : null,
-                                      ),
-                                    );
-                                  },
-                                ),
-                                IconButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => ReviewPage(
-                                          userProfileImage: userData?["image"] ?? "",
-                                          userName: userData?["username"] ?? "",
-                                          productImage: data[index]["productimage"],
-                                          productId: data[index]['productId'],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  icon: Icon(Icons.comment_outlined),
-                                ),
-                                Text(
-                                  '\u20B9 ${data[index]["amount"]}', // Add the rupee symbol as a prefix
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => BuynowPage( productId: data[index]['productId'],userProfileImage: userData?["image"] ?? "",userName: userData?["username"] ?? "",
-                                          )),
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color.fromARGB(255, 195, 60, 105),
-                                  ),
-                                  child: Text(
-                                    'Buy Now',
-                                    style: GoogleFonts.inknutAntiqua(color: Colors.white),
-                                  ),
-                                ),
-                               FutureBuilder<bool>(
-  future: isProductInCart(data[index].id),
-  builder: (context, snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return IconButton(
-        icon: Icon(Icons.add_shopping_cart),
-        onPressed: null,
-      );
-    }
-    bool isInCart = snapshot.data ?? false;
-    return IconButton(
-      onPressed: () {
-        _toggleCart(data[index].id, data[index].data());
-      },
-      icon: Icon(
-        isInCart ? Icons.remove_shopping_cart : Icons.add_shopping_cart,
-        color: isInCart ? Colors.red : null,
-      ),
-    );
-  },
-),
-
-                              ],
-                            ),
-                            SizedBox(height: 20),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+          }),
     );
   }
 
@@ -456,8 +650,8 @@ ElevatedButton(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ListTile(
-                leading: Icon(Icons.report),
-                title: Text('Report'),
+                leading: const Icon(Icons.report),
+                title: const Text('Report'),
                 onTap: () {
                   print('Report tapped');
                   Navigator.pop(context); // Close the bottom sheet
@@ -469,10 +663,10 @@ ElevatedButton(
                   );
                 },
               ),
-              Divider(),
+              const Divider(),
               ListTile(
-                leading: Icon(Icons.block),
-                title: Text('Block'),
+                leading: const Icon(Icons.block),
+                title: const Text('Block'),
                 onTap: () {
                   print('Block tapped');
                   Navigator.pop(context); // Close the bottom sheet
@@ -484,12 +678,12 @@ ElevatedButton(
                   );
                 },
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context); // Close the bottom sheet
                 },
-                child: Text('Close'),
+                child: const Text('Close'),
               ),
             ],
           ),

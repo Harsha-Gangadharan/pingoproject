@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/User/addbankdetail.dart';
 import 'package:flutter_application_1/User/artistconfirmation.dart';
 import 'package:flutter_application_1/User/cartpage.dart';
+import 'package:flutter_application_1/User/chatscreen.dart';
+import 'package:flutter_application_1/User/expopage.dart';
 import 'package:flutter_application_1/User/hompage.dart';
 import 'package:flutter_application_1/User/message.dart';
 import 'package:flutter_application_1/User/order.dart';
@@ -25,12 +27,14 @@ class _PackagesState extends State<Packages> {
   final List<Widget> _pages = [
   const Home(),
   SearchPage(),
-  ArtistConfirm(),
+  ArtistConfirm(expoId: "",),
   OrderPage(),
-  const ProfilePage(),
-  ArtistConfirm(),
- BankDetailsPage(),
+   ProfilePage(id: FirebaseAuth.instance.currentUser!.uid,),
+  // ArtistConfirm(),
+  Chatscreen(),
+//  BankDetailsPage(),
  CartPage(),
+ ArtExpo()
  
 
 ];

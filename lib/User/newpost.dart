@@ -10,7 +10,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class NewPost extends StatefulWidget {
-  const NewPost({Key? key}) : super(key: key);
+  String expoId;
+   NewPost({Key? key,required this.expoId}) : super(key: key);
 
   @override
   State<NewPost> createState() => _NewPostState();
@@ -29,9 +30,12 @@ class _NewPostState extends State<NewPost> {
     try {
       String uid = _auth.currentUser!.uid;
       var docRef = FirebaseFirestore.instance.collection('productdetails').doc();
-      String docId = docRef.id;
+      
 
-      await docRef.set({
+String docId="";
+if(widget.expoId==""){
+  docId=docRef.id;
+  await docRef.set({
         'amount': int.parse(ammountController.text),
         'description': descriptionController.text,
         'productimage': '',
@@ -39,6 +43,30 @@ class _NewPostState extends State<NewPost> {
         'category': selectedCategory,
         'productId': docId
       });
+
+
+}else{
+  var expoDocRef = FirebaseFirestore.instance.collection('expo').doc(widget.expoId).collection("Participants").doc(uid);
+  docId=expoDocRef.id;
+    await expoDocRef.set({
+        'amount': int.parse(ammountController.text),
+        'description': descriptionController.text,
+        'productimage': '',
+        'uid': uid,
+        'category': selectedCategory,
+        'productId': docId,
+        'Likes':[]
+      });
+
+}
+
+
+
+
+
+    
+
+    
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -48,6 +76,7 @@ class _NewPostState extends State<NewPost> {
       Navigator.push(context, MaterialPageRoute(builder: (context) => Packages(indexNum: 0)));
 
       if (uploadImage != null) {
+        
         SettableMetadata metadata = SettableMetadata(contentType: 'image/jpeg');
         UploadTask uploadTask = FirebaseStorage.instance
             .ref()
@@ -56,7 +85,11 @@ class _NewPostState extends State<NewPost> {
         TaskSnapshot snapshot = await uploadTask;
         String url = await snapshot.ref.getDownloadURL();
 
-        await docRef.update({'productimage': url});
+        if(widget.expoId==""){
+          await docRef.update({'productimage': url});
+        }else{
+          await  FirebaseFirestore.instance.collection('expo').doc(widget.expoId).collection("Participants").doc(uid).update({'productimage': url});
+        }
       }
 
       Navigator.push(context, MaterialPageRoute(builder: (context) => Packages(indexNum: 0)));

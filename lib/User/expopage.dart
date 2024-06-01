@@ -1,17 +1,44 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/User/expovote.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class ArtExpo extends StatelessWidget {
+class ArtExpo extends StatefulWidget {
+  @override
+  State<ArtExpo> createState() => _ArtExpoState();
+}
+
+class _ArtExpoState extends State<ArtExpo> {
+  // List<String> expoTitles = [];
+  List<Map<String, dynamic>> data=[];
+  
+
+  @override
+  void initState() {
+    super.initState();
+    fetchExpoTitles();
+  }
+
+  Future<void> fetchExpoTitles() async {
+    String uid = FirebaseAuth.instance.currentUser!.uid;
+    var querySnapshot = await FirebaseFirestore.instance.collection('expo').get();
+    setState(() {
+       data= querySnapshot.docs.map((doc) => doc.data()).toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color.fromARGB(183, 225, 56, 132),
-        title: Text('Art Expo'),
-        titleTextStyle: GoogleFonts.inknutAntiqua(
-          fontSize: 26,
-          color: Color.fromARGB(255, 14, 14, 14),
+        title: Text(
+          'Art Expo',
+          style: GoogleFonts.inknutAntiqua(
+            fontSize: 26,
+            color: Color.fromARGB(255, 14, 14, 14),
+          ),
         ),
       ),
       body: Column(
@@ -26,64 +53,22 @@ class ArtExpo extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Column(
-              children: <Widget>[
-                Expanded(
-                  child: Row(
-                    children: <Widget>[
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => Expovote()),
-                          );
-                        },
-                        child: _buildContainer(context, title: 'Conflict and Adversity'),
-                      ),
-                      _buildContainer(context, title: 'Heroes and Leaders'),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Row(
-                    children: <Widget>[
-                      _buildContainer(context, title: 'Humans and Environment'),
-                      _buildContainer(context, title: 'Identity'),
-                    ],
-                  ),
-                ),
-              ],
+            child: ListView.builder(
+              itemCount: data.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => Expovote(expoId: data[index]["expoId"],)),
+                    );
+                  },
+                  title: Text(data[index]["title"]),
+                );
+              },
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildContainer(BuildContext context, {required String title}) {
-    return Expanded(
-      child: Container(
-        width: MediaQuery.of(context).size.width / 2,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey),
-        ),
-        child: Center(
-          child: Text(title),
-        ),
-      ),
-    );
-  }
-}
-
-class ConflictAdversityScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Conflict and Adversity'),
-      ),
-      body: Center(
-        child: Text('This is the Conflict and Adversity screen'),
       ),
     );
   }

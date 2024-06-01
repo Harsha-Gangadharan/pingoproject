@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -18,18 +19,18 @@ class FollowingListPage extends StatelessWidget {
         centerTitle: true,
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('followers').snapshots(),
+        stream: FirebaseFirestore.instance.collection('useregisteration').doc(FirebaseAuth.instance.currentUser!.uid).collection("Following").snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Center(
               child: CircularProgressIndicator(),
             );
           }
-          final followerDocs = snapshot.data!.docs;
-          return ListView.builder(
-            itemCount: followerDocs.length,
+          final following = snapshot.data!.docs;
+          return  following.isEmpty?Center(child: Text("No Followers"),): ListView.builder(
+            itemCount: following.length,
             itemBuilder: (context, index) {
-              final followerID = followerDocs[index].id;
+           final followerID=following[index]["id"];
 
               return FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
@@ -49,7 +50,9 @@ class FollowingListPage extends StatelessWidget {
                       backgroundImage: NetworkImage(userProfileImage ?? ''),
                     ),
                     title: Text(username ?? ''),
-                    trailing: FollowButton(followerID: followerID),
+                    trailing: FollowButton(followerID: followerID,onPressed: () {
+                      unFollow(followerID);
+                    },),
                   );
                 },
               );
@@ -59,55 +62,37 @@ class FollowingListPage extends StatelessWidget {
       ),
     );
   }
+  unFollow(anothorUserId) async {
+    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+    final collection =
+        FirebaseFirestore.instance.collection("useregisteration");
+    collection
+        .doc(currentUserId)
+        .collection("Following")
+        .doc(anothorUserId)
+        .delete();
+    collection
+        .doc(anothorUserId)
+        .collection("Followers")
+        .doc(currentUserId)
+        .delete();
+  }
 }
 
-class FollowButton extends StatefulWidget {
+class FollowButton extends StatelessWidget {
   final String followerID;
+   void Function()? onPressed;
 
-  FollowButton({required this.followerID});
+  FollowButton({required this.followerID,required this.onPressed});
 
-  @override
-  _FollowButtonState createState() => _FollowButtonState();
-}
+  // void _toggleFollow() async {
 
-class _FollowButtonState extends State<FollowButton> {
-  bool isFollowing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkFollowStatus();
-  }
-
-  void _checkFollowStatus() async {
-    final followStatus = await FirebaseFirestore.instance
-        .collection('followers')
-        .doc(widget.followerID)
-        .get();
-
-    setState(() {
-      isFollowing = followStatus.exists;
-    });
-  }
-
-  void _toggleFollow() async {
-    final followersRef = FirebaseFirestore.instance.collection('followers').doc(widget.followerID);
-    if (isFollowing) {
-      await followersRef.delete();
-    } else {
-      await followersRef.set({'timestamp': FieldValue.serverTimestamp()});
-    }
-
-    setState(() {
-      isFollowing = !isFollowing;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: _toggleFollow,
-      child: Text(isFollowing ? 'Unfollow' : 'Follow'),
+      onPressed:onPressed ,
+      child: Text( 'Unfollow'),
     );
   }
 }

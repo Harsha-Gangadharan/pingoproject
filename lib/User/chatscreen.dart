@@ -1,8 +1,10 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/User/blockmessage.dart';
 import 'package:flutter_application_1/User/message.dart';
+import 'package:flutter_application_1/User/package.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:bottom_bar_with_sheet/bottom_bar_with_sheet.dart';
 
@@ -190,6 +192,10 @@ class _ChatscreenState extends State<Chatscreen> {
           ),
         ],
       ),
+       bottomNavigationBar: MyNav(index:0, onTap: (index){
+  setState(() {
+Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context)=>Packages(indexNum: index)))   ;       });
+       }, firestore:  FirebaseFirestore.instance, auth: FirebaseAuth.instance),
     );
   }
 }

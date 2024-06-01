@@ -7,7 +7,8 @@ import 'package:flutter_application_1/User/newpost.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ArtistConfirm extends StatefulWidget {
-  const ArtistConfirm({Key? key}) : super(key: key);
+  String expoId;
+   ArtistConfirm({Key? key,required this.expoId}) : super(key: key);
 
   @override
   State<ArtistConfirm> createState() => _ArtistConfirmState();
@@ -96,7 +97,7 @@ class _ArtistConfirmState extends State<ArtistConfirm> {
                                               ),
                                               ElevatedButton(
                                                 onPressed: () {
-                                                     Navigator.push(context, MaterialPageRoute(builder: (context) => NewPost()));
+                                                     Navigator.push(context, MaterialPageRoute(builder: (context) => NewPost(expoId: widget.expoId,)));
                                                 },
                                                 style: ElevatedButton.styleFrom(
                                                   backgroundColor:
