@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application_1/User/hompage.dart';
 import 'package:flutter_application_1/User/package.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,7 +25,7 @@ class _AddAddressPageState extends State<AddAddressPage> {
   final nameController = TextEditingController();
   final contactNumberController = TextEditingController();
   final _auth = FirebaseAuth.instance;
-
+ int maxLength = 10;
 Future<void> AddressDetailsadd() async {
   try {
     String uid = _auth.currentUser!.uid;
@@ -194,6 +195,7 @@ Future<void> AddressDetailsadd() async {
                 ),
                 TextFormField(
                   controller: contactNumberController,
+                    inputFormatters: [LengthLimitingTextInputFormatter(maxLength)],
                   decoration: const InputDecoration(
                     labelText: 'Contact Number',
                   ),

@@ -77,41 +77,31 @@ class _CartPaymentState extends State<CartPayment> {
           Divider(),
           SizedBox(height: 20,),
           PaymentOption(
-                      title: "Wallet/UPI",
-                      selected: selectedOption == 0,
-                      onTap: () {
-log(widget.totalPay.toString());
-                        showModalBottomSheet(
-                          showDragHandle: true,
-                          context: context, builder: (context) =>ShowPaymentoptions(totalAMount: widget.totalPay,page: "User",),);
-                    
-                      },
-                    ),
-          // FutureBuilder<UpiApp>(
-          //       future: paymentController.appOpen(),
-          //       builder: (context, snapshot) {
-          //         if (snapshot.connectionState == ConnectionState.waiting) {
-          //           return const Center(child: CircularProgressIndicator());
-          //         } else if (snapshot.hasError) {
-          //           return Center(child: Text('Error: ${snapshot.error}'));
-          //         } else if (!snapshot.hasData) {
-          //           return const Center(child: Text('No UPI app found'));
-          //         } else {
-          //           return 
-                    
-          //         }
-          //       },
-          //     ),
-              const SizedBox(height: 25),
-              PaymentOption(
-                title: "Cash on delivery",
-                selected: selectedOption == 2,
-                onTap: () {
-                  setState(() {
-                    selectedOption=2;
-                  });
-                },
-              ),
+      title: "Wallet/UPI",
+      selected: selectedOption == 0,
+      onTap: () {
+        log(widget.totalPay.toString());
+        showModalBottomSheet(
+          showDragHandle: true,
+          context: context,
+          builder: (context) => ShowPaymentoptions(totalAMount: widget.totalPay, page: "User", selectedOption: 0,),
+        );
+        selectedOption = 0; // Set selected option to Wallet/UPI
+      },
+    ),
+
+    const SizedBox(height: 25),
+
+    PaymentOption(
+      title: "Cash on delivery",
+      selected: selectedOption == 2,
+      onTap: () {
+        setState(() {
+          selectedOption = 2; // Set selected option to Cash on Delivery
+        });
+      },
+    ),
+              
           Padding(
             padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 0.0),
             child: Row(
@@ -137,11 +127,11 @@ log(widget.totalPay.toString());
               height: 50.0,
               child: ElevatedButton(
                 onPressed: () { 
-                      // PaymentController().create(widget.totalPay);
-                  // Navigator.push(
-                  //             context,
-                  //             MaterialPageRoute(builder: (context) => CartSummery()),
-                  //           );
+                     
+                  Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => CartSummary(selectedOption: selectedOption)),
+                            );
                             },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 195, 60, 105),

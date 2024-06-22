@@ -9,7 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'buynowpage.dart';
 import 'cartpage.dart';
-import 'chatscreen.dart';
+import '../chatroom/chatscreen.dart';
 import 'expopage.dart';
 import 'review.dart';
 
@@ -335,7 +335,7 @@ class _HomeriskState extends State<Homerisk> {
                                           userProfileImage: userData?["image"] ?? "",
                                           userName: userData?["username"] ?? "",
                                           productImage: data[index]["productimage"],
-                                          productId: data[index]['productId'],
+                                          productId: data[index]['productId'], sellerId: data[index]['uid'],
                                         ),
                                       ),
                                     );

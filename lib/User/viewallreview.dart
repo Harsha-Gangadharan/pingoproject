@@ -6,8 +6,9 @@ import 'review.dart';
 
 class ViewAllReview extends StatefulWidget {
   final String productId;
+  final String sellerId;
 
-  ViewAllReview({required this.productId});
+  ViewAllReview({required this.productId, required this.sellerId});
 
   @override
   State<ViewAllReview> createState() => _ViewAllReviewState();
@@ -50,6 +51,7 @@ class _ViewAllReviewState extends State<ViewAllReview> {
             itemBuilder: (context, index) {
               String uid = reviews[index].uid;
               bool isCurrentUser = uid == _auth.currentUser!.uid;
+              bool isSeller = widget.sellerId == _auth.currentUser!.uid;
 
               return FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
@@ -105,7 +107,7 @@ class _ViewAllReviewState extends State<ViewAllReview> {
                         ),
                       ],
                     ),
-                    trailing: isCurrentUser
+                    trailing: isCurrentUser || isSeller
                         ? IconButton(
                             icon: Icon(Icons.delete),
                             onPressed: () async {

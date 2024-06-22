@@ -12,12 +12,14 @@ class ReviewPage extends StatefulWidget {
   final String userName;
   final String productImage;
   final String productId;
+  final String sellerId;
 
   ReviewPage({
     required this.userProfileImage,
     required this.userName,
     required this.productImage,
     required this.productId,
+    required this.sellerId,
   });
 
   @override
@@ -44,6 +46,7 @@ class _ReviewPageState extends State<ReviewPage> {
         'userProfileImage': widget.userProfileImage,
         'userName': widget.userName,
         'productId': widget.productId,
+        'sellerId': widget.sellerId,
         'rating': _rating,
         'review': reviewText,
         'timestamp': FieldValue.serverTimestamp(),
@@ -107,13 +110,7 @@ class _ReviewPageState extends State<ReviewPage> {
                       ),
                     ],
                   ),
-                  Row(
-                    children: [
-                      Icon(Icons.remove_red_eye),
-                      SizedBox(width: 8.0),
-                      Text('500K views'), // Replace '500K views' with your view count
-                    ],
-                  ),
+
                 ],
               ),
             ),
@@ -134,16 +131,7 @@ class _ReviewPageState extends State<ReviewPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
-                    onPressed: () {},
-                    child: Row(
-                      children: [
-                        Icon(Icons.share),
-                        SizedBox(width: 8.0),
-                        Text('Share'),
-                      ],
-                    ),
-                  ),
+                  
                 ],
               ),
             ),
@@ -257,7 +245,7 @@ class _ReviewPageState extends State<ReviewPage> {
                     onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => ViewAllReview(productId: widget.productId)),
+                          builder: (context) => ViewAllReview(productId: widget.productId, sellerId: widget.sellerId,)),
                     ),
                     child: Text('View All Reviews'),
                   ),

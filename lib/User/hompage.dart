@@ -5,22 +5,23 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/User/proflie.dart';
+import 'package:flutter_application_1/chatroom/chatscreen.dart';
+import 'package:flutter_application_1/crud/model.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'buynowpage.dart';
 import 'cartpage.dart';
-import 'chatscreen.dart';
 import 'expopage.dart';
 import 'review.dart';
 
-class Home extends StatefulWidget {
-  const Home({Key? key}) : super(key: key);
+class HomePage extends StatefulWidget {
+  const HomePage({Key? key}) : super(key: key);
 
   @override
-  State<Home> createState() => _HomeState();
+  State<HomePage> createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
+class _HomeState extends State<HomePage> {
   late List<bool> isFollowingList;
   late List<bool> isLikedList;
   bool liked = false;
@@ -236,6 +237,70 @@ class _HomeState extends State<Home> {
     });
   }
 
+  void reportProduct(String productId, String sellerId, String userId) async {
+    // Define your report limit
+    const int reportLimit = 5;
+
+    CollectionReference reports =
+        FirebaseFirestore.instance.collection('reports');
+
+    // Check if a report already exists
+    DocumentSnapshot reportDoc = await reports.doc(productId).get();
+
+    if (reportDoc.exists) {
+      // If a report already exists by this user, update the existing report
+      ReportModel report =
+          ReportModel.fromData(reportDoc.data() as Map<String, dynamic>);
+
+      // Increment the count
+      report.count += 1;
+
+      // Update the report count in Firestore
+      reports.doc(productId).update({'count': report.count}).then((_) {
+        log('Report count incremented successfully');
+      }).catchError((error) {
+        log('Failed to increment report count: $error');
+      });
+
+      // Check if the report count has reached the limit
+      if (report.count >= reportLimit) {
+        // Delete the product from Firestore
+        FirebaseFirestore.instance
+            .collection('productdetails')
+            .doc(productId)
+            .delete()
+            .then((_) {
+          log('Product deleted successfully due to reports');
+        }).catchError((error) {
+          log('Failed to delete product: $error');
+        });
+
+        // Delete the report document from Firestore
+        reports.doc(productId).delete().then((_) {
+          log('Report document deleted successfully');
+        }).catchError((error) {
+          log('Failed to delete report document: $error');
+        });
+      }
+    } else {
+      // Create a new report if it doesn't exist
+      ReportModel newReport = ReportModel(
+        productId: productId,
+        id: productId,
+        sellerId: sellerId,
+        userId: userId,
+        count: 1, // Initialize count to 1
+      );
+
+      // Add the new report to Firestore
+      reports.doc(productId).set(newReport.data(productId)).then((_) {
+        log('Report added successfully');
+      }).catchError((error) {
+        log('Failed to add report: $error');
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -371,102 +436,104 @@ class _HomeState extends State<Home> {
                                                       //   log("false");
                                                       //   following = false;
                                                       // }
-                                                     if(snapshot.hasData){
-                                                       return ElevatedButton(
-                                                        onPressed: () {
-
-
-
-                                                          
-                                                         if(snapshot.data!.exists){
-                                                          unFollow(data[index]
-                                                              [
-                                                              "uid"]);
-
-                                                         }else{
-                                                           followUser(data[index]
-                                                              [
-                                                              "uid"]);
-                                                         }
-                                                        },
-                                                        style: ElevatedButton
-                                                            .styleFrom(
-                                                          backgroundColor:
-                                                              snapshot.data!.exists
-                                                                  ? Colors.blue
-                                                                      .shade300
-                                                                  : Colors.grey,
-                                                        ),
-                                                        child: Text(
-                                                          snapshot.data!.exists
-                                                              ? 'Following'
-                                                              : 'Follow',
-                                                          style: const TextStyle(
-                                                              color:
-                                                                  Colors.black),
-                                                        ),
-                                                      );
-                                                     }else{
-                                                      return SizedBox();
-                                                     }
+                                                      if (snapshot.hasData) {
+                                                        return ElevatedButton(
+                                                          onPressed: () {
+                                                            if (snapshot
+                                                                .data!.exists) {
+                                                              unFollow(
+                                                                  data[index]
+                                                                      ["uid"]);
+                                                            } else {
+                                                              followUser(
+                                                                  data[index]
+                                                                      ["uid"]);
+                                                            }
+                                                          },
+                                                          style: ElevatedButton
+                                                              .styleFrom(
+                                                            backgroundColor:
+                                                                snapshot.data!
+                                                                        .exists
+                                                                    ? Colors
+                                                                        .blue
+                                                                        .shade300
+                                                                    : Colors
+                                                                        .grey,
+                                                          ),
+                                                          child: Text(
+                                                            snapshot.data!
+                                                                    .exists
+                                                                ? 'Following'
+                                                                : 'Follow',
+                                                            style:
+                                                                const TextStyle(
+                                                                    color: Colors
+                                                                        .black),
+                                                          ),
+                                                        );
+                                                      } else {
+                                                        return SizedBox();
+                                                      }
                                                     }),
-                                            PopupMenuButton(
-                                              itemBuilder:
-                                                  (BuildContext context) {
-                                                return [
-                                                  const PopupMenuItem(
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(Icons.share),
-                                                        Text('Share')
-                                                      ],
-                                                    ),
-                                                    value: 'Share',
+                                            PopupMenuButton(itemBuilder:
+                                                (BuildContext context) {
+                                              return [
+                                                const PopupMenuItem(
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(Icons.share),
+                                                      Text('Share')
+                                                    ],
                                                   ),
-                                                  const PopupMenuItem(
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(Icons.delete),
-                                                        Text('Delete')
-                                                      ],
-                                                    ),
-                                                    value: 'Delete',
+                                                  value: 'Share',
+                                                ),
+                                                const PopupMenuItem(
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(Icons.delete),
+                                                      Text('Delete')
+                                                    ],
                                                   ),
-                                                  const PopupMenuItem(
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(Icons.message),
-                                                        Text('Send Message')
-                                                      ],
-                                                    ),
-                                                    value: 'Send Message',
+                                                  value: 'Delete',
+                                                ),
+                                                const PopupMenuItem(
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(Icons.message),
+                                                      Text('Send Message')
+                                                    ],
                                                   ),
-                                                  const PopupMenuItem(
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(Icons.report),
-                                                        Text('Report')
-                                                      ],
-                                                    ),
-                                                    value: 'Report',
+                                                  value: 'Send Message',
+                                                ),
+                                                const PopupMenuItem(
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(Icons.report),
+                                                      Text('Report')
+                                                    ],
                                                   ),
-                                                ];
-                                              },
-                                              onSelected: (value) {
-                                                switch (value) {
-                                                  case 'Share':
-                                                    // Handle Share action
-                                                    break;
-                                                  case 'Unfollow':
-                                                    // Handle Unfollow action
-                                                    break;
-                                                  case 'Report':
-                                                    _showReportBottomSheet(); // Show bottom sheet for report
-                                                    break;
-                                                  default:
-                                                }
-                                              },
-                                            ),
+                                                  value: 'Report',
+                                                ),
+                                              ];
+                                            }, onSelected: (value) {
+                                              switch (value) {
+                                                case 'Share':
+                                                  // Handle Share action
+                                                  break;
+                                                case 'Unfollow':
+                                                  // Handle Unfollow action
+                                                  break;
+                                                case 'Report':
+                                                  _showReportBottomSheet(
+                                                      data[index]["productId"],
+                                                      data[index]["uid"],
+                                                      FirebaseAuth.instance
+                                                          .currentUser!.uid);
+                                                  break;
+                                                default:
+                                              }
+                                            }),
                                           ],
                                         ),
                                         const SizedBox(height: 10),
@@ -543,13 +610,14 @@ class _HomeState extends State<Home> {
                                                       productImage: data[index]
                                                           ["productimage"],
                                                       productId: data[index]
-                                                          ['productId'],
+                                                          ['productId'], 
+                                                          sellerId: data[index]['uid'],
                                                     ),
                                                   ),
                                                 );
                                               },
-                                              icon:
-                                                  const Icon(Icons.comment_outlined),
+                                              icon: const Icon(
+                                                  Icons.comment_outlined),
                                             ),
                                             Text(
                                               '\u20B9 ${data[index]["amount"]}', // Add the rupee symbol as a prefix
@@ -640,50 +708,23 @@ class _HomeState extends State<Home> {
     );
   }
 
-  void _showReportBottomSheet() {
+  void _showReportBottomSheet(
+      String productId, String sellerId, String userId) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
         return Container(
-          height: 200,
+          padding: EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: const Icon(Icons.report),
-                title: const Text('Report'),
-                onTap: () {
-                  print('Report tapped');
-                  Navigator.pop(context); // Close the bottom sheet
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('You reported this account'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
-              ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.block),
-                title: const Text('Block'),
-                onTap: () {
-                  print('Block tapped');
-                  Navigator.pop(context); // Close the bottom sheet
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('You blocked this account'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 20),
+              Text('Report Product'),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context); // Close the bottom sheet
+                  reportProduct(productId, sellerId, userId);
+                  Navigator.pop(context);
                 },
-                child: const Text('Close'),
+                child: Text('Report'),
               ),
             ],
           ),

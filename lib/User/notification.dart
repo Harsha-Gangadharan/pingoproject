@@ -1,4 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/crud/notification_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class NotificationPage extends StatefulWidget {
@@ -9,7 +12,29 @@ class NotificationPage extends StatefulWidget {
 class _NotificationPageState extends State<NotificationPage> {
   bool _isOrdersSelected = false;
   bool _isActivitiesSelected = false;
-int _selectedIndex = 0;
+  int _selectedIndex = 0;
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getNotifcation() {
+    return FirebaseFirestore.instance
+        .collection("Notifications")
+        .where("type", isEqualTo: "Admin")
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getCurrentUserNotification() {
+    return FirebaseFirestore.instance
+        .collection("Notifications")
+        .where("fromId", isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getCurrentUserNotificationadmin() {
+    return FirebaseFirestore.instance
+        .collection("Notifications")
+        .where("type", isEqualTo: 'Admin')
+        .snapshots();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,7 +58,9 @@ int _selectedIndex = 0;
       ),
       body: Column(
         children: [
-          SizedBox(height: 20,),
+          SizedBox(
+            height: 20,
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -57,7 +84,9 @@ int _selectedIndex = 0;
                   ),
                 ),
               ),
-              SizedBox(width: 30,),
+              SizedBox(
+                width: 30,
+              ),
               GestureDetector(
                 onTap: () {
                   setState(() {
@@ -85,15 +114,121 @@ int _selectedIndex = 0;
           Expanded(
             child: Center(
               child: _isOrdersSelected
-                  ? Text('Orders content goes here')
+                  ? Column(
+                      children: [
+                        StreamBuilder(
+                          stream: getCurrentUserNotification(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return CircularProgressIndicator();
+                            }
+
+                            List<NotificationModel> notifi;
+
+                            notifi = snapshot.data!.docs.map((e) {
+                              return NotificationModel.fromJson(
+                                  e.data() as Map<String, dynamic>);
+                            }).toList();
+
+                            return ListView.separated(
+                              shrinkWrap: true,
+                              physics: BouncingScrollPhysics(),
+                              itemCount: notifi.length,
+                              itemBuilder: (context, index) {
+                                final user = notifi[index].fromId;
+
+                                final userdetail = db
+                                    .collection('useregisteration')
+                                    .doc(user)
+                                    .snapshots();
+
+                                return Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 30,
+                                  ),
+                                  child: Material(
+                                    elevation: 4,
+                                    child: Column(
+                                      children: [
+                                        Text('Your Item Order By '),
+                                        StreamBuilder(
+                                          stream: userdetail,
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return CircularProgressIndicator();
+                                            }
+                                            if (snapshot.hasData) {
+                                              return Text(
+                                                  'NAME : ${snapshot.data!['name']}  ');
+                                            }
+                                            return Container();
+                                          },
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                              separatorBuilder: (context, index) {
+                                return SizedBox(
+                                  height: 50,
+                                );
+                              },
+                            );
+                          },
+                        )
+                      ],
+                    )
                   : _isActivitiesSelected
-                      ? Text('Activities content goes here')
+                      ? Column(
+                          children: [
+                            StreamBuilder(
+                              stream: getCurrentUserNotificationadmin(),
+                              builder: (context, snapshot) {
+
+
+                                List<NotificationModel> notifi;
+
+                            notifi = snapshot.data!.docs.map((e) {
+                              return NotificationModel.fromJson(
+                                  e.data() as Map<String, dynamic>);
+                            }).toList();
+                                  
+                                return ListView.separated(
+                                  shrinkWrap: true,
+                                  physics: BouncingScrollPhysics(),
+                                  itemCount: notifi.length,
+                                  itemBuilder: (context, index) {
+                                    return Material(
+                                      elevation: 4,
+                                      child: Column(
+                                        children: [
+                                          Text(' ${notifi[index].message.toString()} EXPO ADDED'),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                  separatorBuilder: (context, index) {
+                                    return SizedBox(
+                                      height: 50,
+                                    );
+                                  },
+                                );
+                              },
+                            )
+                          ],
+                        )
                       : Text('Select a title above'),
             ),
           ),
         ],
       ),
-     
     );
   }
 }
+
+final auth = FirebaseAuth.instance;
+
+final db = FirebaseFirestore.instance;

@@ -3,26 +3,26 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application_1/crud/model.dart';
 class Controller {
   final db=FirebaseFirestore.instance;
-  Future adduser(UserModel userModel) async{
+  Future adduser(ReportModel userModel) async{
     final docRef= db.collection('user cart').doc();
     dynamic id = docRef.id;
     docRef.set(userModel.data(id));
     fetchAllUser();
   }
-  List<UserModel>listofData=[];
-  Future<List<UserModel>>fetchAllUser() async{
+  List<ReportModel>listofData=[];
+  Future<List<ReportModel>>fetchAllUser() async{
     print('Data Fetching');
     final snapshot = await db.collection('user cart').get();
     listofData=snapshot.docs.map((e) {
-      return UserModel.fromData(e.data());
+      return ReportModel.fromData(e.data());
     }).toList();
     return listofData;
   }
-  UserModel?singleUserData;
+  ReportModel?singleUserData;
   Future fechSingleUserData(id)async{
     final snapshot= await db.collection('user cart').doc(id).get();
 
-    singleUserData=UserModel.fromData(snapshot.data()!);
+    singleUserData=ReportModel.fromData(snapshot.data()!);
   }
   Future deleteUser(id)async{
     db.collection('user cart').doc(id).delete();

@@ -9,7 +9,9 @@ import 'package:flutter_application_1/main.dart';
 class ShowPaymentoptions extends StatelessWidget {
   double totalAMount;
   String page;
- ShowPaymentoptions({super.key,required this.totalAMount,required this.page});
+  
+  var selectedOption;
+ ShowPaymentoptions({super.key,required this.totalAMount,required this.page, required this.selectedOption});
 
   @override
   Widget build(BuildContext context) {
@@ -55,14 +57,17 @@ class ShowPaymentoptions extends StatelessWidget {
                 
                       // log(value.toString());
                       // return transaction = value as Future<UpiResponse>?;
-                    }).catchError((error) {
-                      if(page=="Admin"){
-Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context)=>AdHome()), (route) => false);
+                    }).
+                      catchError((error) {
+  if (page == "Admin") {
+    Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => AdHome()), (route) => false);
+  } else {
+    Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => CartSummary(selectedOption: selectedOption)));
+  }
 
-                      }else{
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context)=>CartSummary()));
 
-                      }
 
                       
                     //   for (var i in widget.productModel) {

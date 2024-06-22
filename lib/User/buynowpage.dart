@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/User/addaddress.dart';
+import 'package:flutter_application_1/User/cartpaymentmethod.dart';
 import 'package:flutter_application_1/User/paymentmethod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,7 +19,7 @@ class BuynowPage extends StatefulWidget {
 
 class _BuynowPageState extends State<BuynowPage> {
   int quantity = 1;
-  double itemPrice = 700.0;
+  
   late String currentUserId;
 
   @override
@@ -41,9 +42,9 @@ class _BuynowPageState extends State<BuynowPage> {
     });
   }
 
-  double calculateTotalPrice() {
-    return quantity * itemPrice;
-  }
+  // double calculateTotalPrice() {
+  //   return quantity * itemPrice;
+  // }
 
   Future<DocumentSnapshot<Map<String, dynamic>>> getProductDetails() {
     return FirebaseFirestore.instance.collection("productdetails").doc(widget.productId).get();
@@ -52,11 +53,51 @@ class _BuynowPageState extends State<BuynowPage> {
   Future<DocumentSnapshot<Map<String, dynamic>>> getUserAddress() {
     return FirebaseFirestore.instance.collection("addressdetails").doc(currentUserId).get();
   }
+
   Future<DocumentSnapshot<Map<String, dynamic>>> getSellerDetails(String userId) {
-  return FirebaseFirestore.instance.collection("useregisteration").doc(userId).get();
-}
+    return FirebaseFirestore.instance.collection("useregisteration").doc(userId).get();
+  }
 
+  Future<void> placeOrder(  payment) async {
+    // Get product and seller details
+    DocumentSnapshot<Map<String, dynamic>> productSnapshot = await getProductDetails();
+    DocumentSnapshot<Map<String, dynamic>> sellerSnapshot = await getSellerDetails(productSnapshot.data()?["uid"]);
 
+    // Get user's address
+    DocumentSnapshot<Map<String, dynamic>> addressSnapshot = await getUserAddress();
+    
+    // Prepare data to be stored in buynow collection
+    Map<String, dynamic> orderData = {
+      'productId': widget.productId,
+      'productName': productSnapshot.data()?["description"] ?? "",
+      'productImage': productSnapshot.data()?["productimage"] ?? "",
+      'sellerId': productSnapshot.data()?["uid"],
+      'sellerName': sellerSnapshot.data()?["username"] ?? "",
+      'buyerId': currentUserId,
+      'buyerAddress': {
+        'houseNumber': addressSnapshot.data()?["address.houseNumber"] ?? "",
+        'roadAreaColony': addressSnapshot.data()?["address.roadAreaColony"] ?? "",
+        'nearFamousPlace': addressSnapshot.data()?["address.nearFamousPlace"] ?? "",
+        'city': addressSnapshot.data()?["address.city"] ?? "",
+        'state': addressSnapshot.data()?["address.state"] ?? "",
+        'pincode': addressSnapshot.data()?["address.pincode"] ?? "",
+        'contactNumber': addressSnapshot.data()?["address.contactNumber"] ?? "",
+        'name': addressSnapshot.data()?["address.name"] ?? "",
+      },
+      'quantity': quantity,
+      // 'totalPrice': calculateTotalPrice(),
+      'orderTime': Timestamp.now(),
+    };
+
+    // Add order details to buynow collection
+    await FirebaseFirestore.instance.collection("cart").add(orderData);
+
+    // Navigate to payment page or any confirmation page
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => CartPayment(totalPay: double.parse(payment),)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +124,10 @@ class _BuynowPageState extends State<BuynowPage> {
             );
           }
           final productData = productSnapshot.data!.data();
+        final  itemPrice = productData?["amount"] ;
+
+
+          String payment = itemPrice.toString();
 
           return SingleChildScrollView(
             child: Column(
@@ -115,7 +160,7 @@ class _BuynowPageState extends State<BuynowPage> {
                       ),
                       Spacer(),
                       Text(
-                        '₹ ${itemPrice.toStringAsFixed(2)}',
+                        '₹ ${(itemPrice * quantity).toString()}',
                         style: TextStyle(fontSize: 20.0),
                       ),
                     ],
@@ -132,7 +177,9 @@ class _BuynowPageState extends State<BuynowPage> {
                       Spacer(),
                       IconButton(
                         icon: Icon(Icons.remove_circle),
-                        onPressed: decrementQuantity,
+                        onPressed:(){
+                           decrementQuantity();
+                        },
                       ),
                       Text('Qty: $quantity'),
                       IconButton(
@@ -142,36 +189,35 @@ class _BuynowPageState extends State<BuynowPage> {
                     ],
                   ),
                 ),
-FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-  future: getSellerDetails(productData?["uid"]),
-  builder: (context, sellerSnapshot) {
-    if (sellerSnapshot.connectionState == ConnectionState.waiting) {
-      return Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-    if (!sellerSnapshot.hasData || !sellerSnapshot.data!.exists) {
-      return Center(
-        child: Text('No seller details available'),
-      );
-    }
-    final sellerData = sellerSnapshot.data!.data();
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 16,
-          backgroundImage: NetworkImage(sellerData?["image"] ?? ""),
-        ),
-        SizedBox(width: 8),
-        Text(
-          'Sold by: ${sellerData?["username"] ?? ""}',
-          style: TextStyle(fontSize: 16.0),
-        ),
-      ],
-    );
-  },
-),
-
+                FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                  future: getSellerDetails(productData?["uid"]),
+                  builder: (context, sellerSnapshot) {
+                    if (sellerSnapshot.connectionState == ConnectionState.waiting) {
+                      return Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+                    if (!sellerSnapshot.hasData || !sellerSnapshot.data!.exists) {
+                      return Center(
+                        child: Text('No seller details available'),
+                      );
+                    }
+                    final sellerData = sellerSnapshot.data!.data();
+                    return Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundImage: NetworkImage(sellerData?["image"] ?? ""),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Sold by: ${sellerData?["username"] ?? ""}',
+                          style: TextStyle(fontSize: 16.0),
+                        ),
+                      ],
+                    );
+                  },
+                ),
                 FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                   future: getUserAddress(),
                   builder: (context, addressSnapshot) {
@@ -206,7 +252,7 @@ FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                         Padding(
                           padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 0.0),
                           child: Text(
-                            '${addressData?["address.houseNumber"] ?? ""}, ${addressData?["address.roadAreaColony"] ?? ""},${addressData?["address.nearFamousPlace"] ?? ""}, ${addressData?["address.city"] ?? ""}, ${addressData?["address.state"] ?? ""}, ${addressData?["address.pincode"] ?? ""}\n${addressData?["address.contactNumber"] ?? ""}\n${addressData?["address.name"] ?? ""}',
+                            '${addressData?["address.houseNumber"] ?? ""}, ${addressData?["address.roadAreaColony"] ?? ""}, ${addressData?["address.nearFamousPlace"] ?? ""}, ${addressData?["address.city"] ?? ""}, ${addressData?["address.state"] ?? ""}, ${addressData?["address.pincode"] ?? ""}\n${addressData?["address.contactNumber"] ?? ""}\n${addressData?["address.name"] ?? ""}',
                             style: TextStyle(fontSize: 12.0),
                           ),
                         ),
@@ -218,85 +264,26 @@ FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                 Center(
                   child: SizedBox(
                     height: 50.0,
-                    width: 120,
+                    width: 200,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => AddAddressPage()),
-                        );
+                      onPressed:(){
+                         placeOrder(payment);
                       },
-                      style: ElevatedButton.styleFrom(),
+                      style: ElevatedButton.styleFrom(
+                        shadowColor:  Color.fromARGB(183, 225, 56, 132), // Button color
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.edit, color: Colors.pink, size: 16.0),
+                         
                           SizedBox(width: 8),
                           Center(
                             child: Text(
-                              'Edit',
+                              'Continue',
                               style: TextStyle(color: Colors.pink),
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                  ),
-                ),
-                Divider(),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween
-,
-                    children: [
-                      Text(
-                        'Price Details ($quantity items)',
-                        style: TextStyle(fontSize: 16.0),
-                      ),
-                      Text(
-                        '₹ ${calculateTotalPrice().toStringAsFixed(2)}',
-                        style: TextStyle(fontSize: 16.0),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 0.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Total Product Price',
-                        style: TextStyle(fontSize: 12.0),
-                      ),
-                      TextButton(
-                        onPressed: () => {},
-                        child: Text(
-                          'view price details',
-                          style: TextStyle(fontSize: 12.0, color: Colors.blue),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20.0),
-                Center(
-                  child: SizedBox(
-                    height: 50.0,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => PaymentPage()),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 195, 60, 105),
-                      ),
-                      child: Text(
-                        'Continue',
-                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ),

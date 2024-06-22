@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application_1/User/cartpage.dart';
 import 'package:flutter_application_1/User/hompage.dart';
 import 'package:flutter_application_1/User/package.dart';
@@ -25,7 +26,7 @@ class _EditAddressPageState extends State<EditAddressPage> {
   final contactNumberController = TextEditingController();
   final firestore = FirebaseFirestore.instance;
   final auth = FirebaseAuth.instance;
-
+ int maxLength = 10;
   Future<DocumentSnapshot<Map<String, dynamic>>> getSelectedUserProfile() async {
     String uid = FirebaseAuth.instance.currentUser!.uid;
     return firestore.collection("addressdetails").doc(uid).get();
@@ -207,6 +208,7 @@ class _EditAddressPageState extends State<EditAddressPage> {
                     ),
                     TextFormField(
                       controller: contactNumberController,
+                        inputFormatters: [LengthLimitingTextInputFormatter(maxLength)],
                       decoration: const InputDecoration(
                         labelText: 'Contact Number',
                       ),

@@ -13,10 +13,12 @@ class SellerOrderPage extends StatelessWidget {
   SellerOrderPage({required this.uid});
 
   Future<List<Map<String, dynamic>>> fetchSellerOrders() async {
-    QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore.instance
+    QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
+        .instance
         .collection('cart_summary')
-        .where('items', arrayContainsAny: [{'sellerId': uid}])
-        .get();
+        .where('items', arrayContainsAny: [
+      {'sellerId': uid}
+    ]).get();
 
     List<Map<String, dynamic>> orders = [];
     for (var doc in snapshot.docs) {
@@ -27,51 +29,38 @@ class SellerOrderPage extends StatelessWidget {
     return orders;
   }
 
-  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> fetchCartSummery() async {
-    QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore.instance
-        .collection('cart_summary')
-        .get();
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+      fetchCartSummery() async {
+    QuerySnapshot<Map<String, dynamic>> snapshot =
+        await FirebaseFirestore.instance.collection('cart_summary').get();
 
     return snapshot.docs;
   }
 
-Future<List<dynamic>>  getAllItems()async{
-  List<dynamic> fullItems=[];
-    List<dynamic> sortedList=[];
+  Future<List<dynamic>> getAllItems() async {
+    List<dynamic> fullItems = [];
+    List<dynamic> sortedList = [];
 
- await fetchCartSummery().then((list) {
- 
-for(var i in list){
-  if(i["items"]!=null||i["items"].isNotEmpty){
-   for(var j in i["items"]){
-   fullItems.add(j);
-   sortedList=fullItems.where((element) => element["sellerUid"]==FirebaseAuth.instance.currentUser!.uid).toList();
-   }
+    await fetchCartSummery().then((list) {
+      for (var i in list) {
+        if (i["items"] != null || i["items"].isNotEmpty) {
+          for (var j in i["items"]) {
+            fullItems.add(j);
+            sortedList = fullItems
+                .where((element) =>
+                    element["sellerUid"] ==
+                    FirebaseAuth.instance.currentUser!.uid)
+                .toList();
+          }
+        }
+      }
+    },
+    );
+
+    log(sortedList.length.toString());
+
+    return sortedList;
   }
-}
-});
-
-
-log(sortedList.length.toString());
-
-return sortedList;
-  }
-
-//   fetchProductDetailsOfCurrentUser()async{
-//   FirebaseFirestore.instance.collection("productdetails").
-// }
-
-//   fetchUidOfProductOwners()async{
-//     fetchCartSummery().then((list) {
-// for(var i in list){
-
-// }
-
-
-
-//     })
-
-// }
 
   @override
   Widget build(BuildContext context) {
@@ -86,35 +75,48 @@ return sortedList;
           ),
         ),
       ),
-      
-      body:FutureBuilder(
+      body: FutureBuilder(
         future: getAllItems(),
-        builder: (context,snapshot) {
-          if(snapshot.connectionState==ConnectionState.waiting){
-            return Center(child: CircularProgressIndicator(),);
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
           }
-          final data=snapshot.data;
-          return data!.isEmpty?Center(child: Text("No Orders"),): ListView.separated(itemBuilder: (context, index) {
-            return ListTile(
-                              leading: GestureDetector(
-                                onTap: () {
-                                  // Navigate to the product details screen
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => YourOrderDetails(orderDetail: data[index],),),
-                                    
-                                  );
-                                },
-                                child: Image.network(data[index]['productImage']),
+          final data = snapshot.data;
+          return data!.isEmpty
+              ? Center(
+                  child: Text("No Orders"),
+                )
+              : ListView.separated(
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      leading: GestureDetector(
+                        onTap: () {
+                          // Navigate to the product details screen
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => YourOrderDetails(
+                                product: data[index],
                               ),
-                              // title: Text(data[index]['description']),
-                              subtitle: Text('Qty: ${data[index]['qty']} - ₹${data[index]['amount']}'),
-                            );
-            
-          }, separatorBuilder: (context, index) => SizedBox(height: 20,), itemCount: data!.length);
-        }
-      )
+                            ),
+                          );
+                         
+                        },
+                        child: Image.network(data[index]['productImage']),
+                      ),
+                      // title: Text(data[index]['description']),
+                      subtitle: Text(
+                          'Qty: ${data[index]['qty']} - ₹${data[index]['amount']}             '),
+                    );
+                  },
+                  separatorBuilder: (context, index) => SizedBox(
+                        height: 20,
+                      ),
+                  itemCount: data.length);
+        },
+      ),
     );
   }
 }

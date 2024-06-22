@@ -12,7 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart'; // Import for date formatting
 
 class CartSummary extends StatefulWidget {
-  const CartSummary({Key? key}) : super(key: key);
+  const CartSummary({Key? key, required int selectedOption}) : super(key: key);
 
   @override
   State<CartSummary> createState() => _CartSummaryState();
@@ -25,6 +25,8 @@ class _CartSummaryState extends State<CartSummary> {
   Map<String, int> quantities = {};
   Map<String, double> itemPrices = {};
   double total = 0.0;
+
+  int selectedOption = -1;
 
   @override
   void initState() {
@@ -107,30 +109,33 @@ class _CartSummaryState extends State<CartSummary> {
   }
 
   String sellerUIDDDD = "";
-  Future<void> saveCartSummary() async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  Future<String> saveCartSummary() async {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
 
     List<Map<String, dynamic>> items = [];
     for (var item in cartItems) {
-      var data = item.data() as Map<String, dynamic>;
-      var productId = data['productId'];
-      var qty = quantities[item.id]!;
-      var amount = itemPrices[productId]!;
+    var data = item.data() as Map<String, dynamic>;
+    var productId = data['productId'];
+    var qty = quantities[item.id]!;
+    var amount = itemPrices[productId]!;
 
-      // Fetch product details
-      DocumentSnapshot productSnapshot = await getProductDetails(productId);
-      if (productSnapshot.exists) {
-        var productData = productSnapshot.data() as Map<String, dynamic>;
-        String productImage = productData['productimage'];
+    // Fetch product details
+    DocumentSnapshot productSnapshot = await getProductDetails(productId);
+    if (productSnapshot.exists) {
+      var productData = productSnapshot.data() as Map<String, dynamic>;
+      String productImage = productData['productimage'];
 
-        // Fetch seller details
-        var sellerData = await getSellerDetails(productData['uid']);
-        String sellerImage = sellerData?['image'] ?? '';
-        String sellerName = sellerData?['name'] ?? '';
-        String sellerUid = productData['uid'] ?? '';
-        sellerUIDDDD = productData['uid'] ?? '';
+      // Fetch seller details
+      var sellerData = await getSellerDetails(productData['uid']);
+      String sellerImage = sellerData?['image'] ?? '';
+      String sellerName = sellerData?['name'] ?? '';
+      String sellerUid = productData['uid'] ?? '';
 
-        // Add to items list
+      // Add buyer address
+      final addressSnapshot = await getUserAddress();
+      if (addressSnapshot.exists && addressSnapshot.data != null) {
+        final addressData = addressSnapshot.data() as Map<String, dynamic>;
         items.add({
           'productId': productId,
           'qty': qty,
@@ -138,26 +143,55 @@ class _CartSummaryState extends State<CartSummary> {
           'productImage': productImage,
           'sellerImage': sellerImage,
           'sellerName': sellerName,
-          "sellerUid": sellerUid
+          'sellerUid': sellerUid,
+          'buyerAddress': {
+            'name': addressData?["address.name"] ?? "",
+            'address': {
+              'houseNumber': addressData?["address.houseNumber"] ?? "",
+              'roadAreaColony': addressData?["address.roadAreaColony"] ?? "",
+              'nearFamousPlace': addressData?["address.nearFamousPlace"] ?? "",
+              'city': addressData?["address.city"] ?? "",
+              'state': addressData?["address.state"] ?? "",
+              'pincode': addressData?["address.pincode"] ?? "",
+            },
+            'contactNumber': addressData?["address.contactNumber"] ?? "",
+          },
+          'paymentMode': selectedOption == 0 ? "Cash on Delivery" : "Wallet/UPI",
         });
       }
     }
-
-    // Save cart summary
-    await firestore.collection('cart_summary').add({
-      'uid': currentUserId,
-      'items': items,
-      'total': total,
-      'orderPlacedDate': FieldValue.serverTimestamp(),
-      'deliveryDate': null,
-      'shippingDate': null,
-    });
   }
+
+  // Save cart summary
+  DocumentReference docRef = firestore.collection('cart_summary').doc();
+  String docId = docRef.id; // Get the generated document ID
+  await docRef.set({
+    'uid': currentUserId,
+    'items': items,
+    'total': total,
+    'orderPlacedDate': FieldValue.serverTimestamp(),
+    'deliveryDate': 'within one month',
+    'Status': 'processing',
+    'id': docId, // Store the document ID in the document
+    'paymentMode': selectedOption == 0 ? "Wallet/UPI" : "Cash on Delivery",
+  });
+
+  // Return the document ID to be used elsewhere if needed
+  return docId;
+}
+
 
   String getCurrentDate() {
     final now = DateTime.now();
     final formatter = DateFormat('dd MMM yyyy');
     return formatter.format(now);
+  }
+
+  Future<DocumentSnapshot<Map<String, dynamic>>> getUserAddress() {
+    return FirebaseFirestore.instance
+        .collection("addressdetails")
+        .doc(currentUserId)
+        .get();
   }
 
   Future<void> _removefromcart(String productId) async {
@@ -404,13 +438,16 @@ class _CartSummaryState extends State<CartSummary> {
                   ElevatedButton(
                     onPressed: () async {
                       removeFromCartList(cartItems).then((value) async {
-                        await saveCartSummary().then((value) {
+                        saveCartSummary().then((value) {
                           //-----------------------------------Notification
-                          sendNotiifcation(NotificationModel(
+                          sendNotiifcation(
+                            NotificationModel(
                               fromId: FirebaseAuth.instance.currentUser!.uid,
-                              message: "Your Product is ",
+                              message: "Your Product is order by ${FirebaseAuth.instance.currentUser!.uid}",
                               toID: sellerUIDDDD,
-                              type: "User"));
+                              type: "User",
+                            ),
+                          );
                           //-----------------------------------Notification
 
                           Navigator.of(context).pushAndRemoveUntil(
@@ -421,6 +458,7 @@ class _CartSummaryState extends State<CartSummary> {
                               (route) => false);
                         });
                       });
+
                       // .then((value) {
 
                       // //  removefromcart(productId);

@@ -8,6 +8,7 @@ import 'package:flutter_application_1/User/addaddress.dart';
 import 'package:flutter_application_1/User/addbankdetail.dart';
 import 'package:flutter_application_1/User/followerspage.dart';
 import 'package:flutter_application_1/User/notification.dart';
+import 'package:flutter_application_1/User/package.dart';
 import 'package:flutter_application_1/User/sellerorder.dart';
 import 'package:flutter_application_1/User/wishlist.dart';
 import 'package:flutter_application_1/User/yourorders.dart';
@@ -16,7 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilePage extends StatefulWidget {
   String id;
-   ProfilePage({Key? key,required this.id}) : super(key: key);
+  ProfilePage({Key? key, required this.id}) : super(key: key);
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -49,7 +50,10 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(183, 225, 56, 132),
         title: StreamBuilder<DocumentSnapshot>(
-          stream: firestore.collection('useregisteration').doc(widget.id).snapshots(),
+          stream: firestore
+              .collection('useregisteration')
+              .doc(widget.id)
+              .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -191,43 +195,57 @@ class _ProfilePageState extends State<ProfilePage> {
                             },
                           ),
                           StreamBuilder<QuerySnapshot>(
-                            stream:  FirebaseFirestore.instance.collection('useregisteration').doc(FirebaseAuth.instance.currentUser!.uid).collection("Followers").snapshots(),
-                            builder: (context, snapshot) {
-                               if(snapshot.connectionState==ConnectionState.waiting){
-                                return SizedBox();
-                              }
-                              if(snapshot.hasData){
-                                return _buildStatColumn('Followers',  snapshot.data!.docs.length.toString(), () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => FollowingList()),
-                                );
-                              });
-                              }else{
-                                return SizedBox();
-                              }
-                            }
-                          ),
+                              stream: FirebaseFirestore.instance
+                                  .collection('useregisteration')
+                                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                                  .collection("Followers")
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return SizedBox();
+                                }
+                                if (snapshot.hasData) {
+                                  return _buildStatColumn('Followers',
+                                      snapshot.data!.docs.length.toString(),
+                                      () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              FollowingList()),
+                                    );
+                                  });
+                                } else {
+                                  return SizedBox();
+                                }
+                              }),
                           StreamBuilder<QuerySnapshot>(
-                            stream:  FirebaseFirestore.instance.collection('useregisteration').doc(FirebaseAuth.instance.currentUser!.uid).collection("Following").snapshots(),
-                            builder: (context, snapshot) {
-                              if(snapshot.connectionState==ConnectionState.waiting){
-                                return SizedBox();
-                              }
-                              if(snapshot.hasData){
-                                return _buildStatColumn('Following',  snapshot.data!.docs.length.toString(), () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => FollowingListPage()),
-                                );
-                              });
-                              }else{
-                                return SizedBox();
-                              }
-                            }
-                          ),
+                              stream: FirebaseFirestore.instance
+                                  .collection('useregisteration')
+                                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                                  .collection("Following")
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return SizedBox();
+                                }
+                                if (snapshot.hasData) {
+                                  return _buildStatColumn('Following',
+                                      snapshot.data!.docs.length.toString(),
+                                      () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              FollowingListPage()),
+                                    );
+                                  });
+                                } else {
+                                  return SizedBox();
+                                }
+                              }),
                         ],
                       ),
                     ],
@@ -276,14 +294,48 @@ class _ProfilePageState extends State<ProfilePage> {
                             crossAxisCount: 2),
                     itemCount: userData.length,
                     itemBuilder: (context, index) {
-                      return Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image:
-                                NetworkImage(userData[index]["productimage"]),
-                            fit: BoxFit.cover,
+                      return GestureDetector(
+                        onTap: () {
+                          showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                    title: const Text('Delete'),
+                                    content: const SingleChildScrollView(
+                                      child: ListBody(
+                                        children: <Widget>[
+                                          Text(
+                                              'Would you like to delete your product?'),
+                                        ],
+                                      ),
+                                    ),
+                                    actions: <Widget>[
+                                      TextButton(
+                                        child: const Text('Cancel'),
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                      TextButton(
+                                        child: const Text('Delete'),
+                                        onPressed: () {
+                                          firestore
+                                              .collection("productdetails").doc(userData[index]["productId"]).delete().then((value){
+ Navigator.push(context, MaterialPageRoute(builder: (context) =>  Packages(indexNum: 0,),)); 
+                                              });
+                                        },
+                                      ),
+                                    ],
+                                  ));
+                        },
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image:
+                                  NetworkImage(userData[index]["productimage"]),
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                       );
@@ -352,11 +404,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 title: const Text('Saved Address'),
                 onTap: () {
                   print('Saved Address tapped');
-                    Navigator.push(
+                  Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (context) => AddAddressPage()));
-                
                 },
               ),
               const Divider(),
@@ -365,8 +416,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 title: const Text('Your Orders'),
                 onTap: () {
                   print('Your Orders tapped');
-Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => SellerOrderPage(uid: widget.id,)));;
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => SellerOrderPage(
+                                uid: widget.id,
+                              )));
+                  ;
                 },
               ),
               const SizedBox(height: 20),
@@ -406,10 +462,7 @@ Navigator.push(context,
                           await SharedPreferences.getInstance();
                       await auth.signOut();
                       preferences.clear();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => Getstart()),
-                      );
+                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Getstart(),), (route) => false);
                       print('Logout confirmed');
                     },
                     child: const Text('Logout'),

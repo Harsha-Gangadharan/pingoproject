@@ -1,228 +1,134 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:developer';
 
-class YourOrderDetails extends StatelessWidget {
-  var orderDetail;
-  
-   YourOrderDetails({Key? key,required this.orderDetail,}) : super(key: key);
+import 'package:flutter_application_1/User/notification.dart';
+
+class YourOrderDetails extends StatefulWidget {
+  final Map<String, dynamic> product;
+
+  YourOrderDetails({required this.product});
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      title: Text('Your Orders'),
-    ),
-    body: Padding(
-      padding: EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _orderIdRow(),
-          _paymentModeRow(),
-          Divider(),
-          _receiverAddressRow(),
-          _productDetailsRow(),
-          _soldByRow(),
-          _orderTrackingRow(),
-          _orderDetailsRow(context), // Pass context here
-          _priceDetailsRow(),
-        ],
-      ),
-    ),
-  );
+  State<YourOrderDetails> createState() => _YourOrderDetailsState();
 }
 
+class _YourOrderDetailsState extends State<YourOrderDetails> {
+  final status = ['Processing', 'Pending', 'Completed'];
+  String? selectedStatus;
 
-  Widget _orderIdRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Sub Order ID:',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        Text('77595935'),
-      ],
-    );
+  Stream<QuerySnapshot<Map<String, dynamic>>> getProductid() {
+    return FirebaseFirestore.instance
+        .collection('cart_summary')
+        .where('uid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+        .snapshots();
   }
 
-  Widget _paymentModeRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Payment Mode:',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        Text('Cash on delivery/Online Payment'),
-      ],
-    );
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+      fetchCartSummerye() async {
+    QuerySnapshot<Map<String, dynamic>> snapshot =
+        await FirebaseFirestore.instance.collection('cart_summary')
+        .where('uid',isEqualTo: auth.currentUser!.uid)
+        .get();
+
+    return snapshot.docs;
   }
 
-  Widget _receiverAddressRow() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Receiver Address:',
-          style: TextStyle(fontWeight: FontWeight.bold),
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Your Order Details'),
         ),
-        Text('Example house, local arva, post office.\near city, district, state, pincode, phone number'),
-      ],
-    );
-  }
+        body: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FutureBuilder(future: fetchCartSummerye(), builder: (context, snapshot) {
+                  return Text(
+                    '');
+                },),
+                SizedBox(height: 10),
+                Text('Seller Name: ${widget.product['sellerName']}'),
+                Image.network(widget.product['productImage']),
+                Text(
+                    'City: ${widget.product['buyerAddress']['address']['city']}'),
+                Text(
+                    'Near Famous Place: ${widget.product['buyerAddress']['address']['nearFamousPlace']}'),
+                Text(
+                    'PINCODE: ${widget.product['buyerAddress']['address']['pincode']}'),
+                Text('Payment Mode: ${widget.product['paymentMode']}'),
+                Text('Delivery Date: within one month'),
+                SizedBox(height: 20),
+                DropdownButtonFormField(
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Select Status',
+                  ),
+                  value: selectedStatus,
+                  items: status.map((status) {
+                    return DropdownMenuItem(
+                      value: status,
+                      child: Text(status),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedStatus = value as String?;
+                    });
+                  },
+                ),
+                SizedBox(height: 20),
+                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: getProductid(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    }
+                    if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    }
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return Text('No data found');
+                    }
 
-  Widget _productDetailsRow() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Divider(), 
-        Text('Art Name'),
-        SizedBox(height: 8), 
-        Container( 
-          width: 50,
-          height: 50,
-          color: Colors.grey[200],
-        ),
-        Text('Size: Free size'),
-        Divider(), // Line under Size
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Qty-1'),
-            IconButton(
-              icon: Icon(Icons.remove),
-              onPressed: () => print('Remove button pressed'),
+                    final docs = snapshot.data!.docs;
+                    return ElevatedButton(
+                      onPressed: () {
+                        
+                        for (var doc in docs) {
+                          log('Document ID: ${doc.id}');
+                           
+                        }
+ 
+                      },
+                      child: Text('Update Status'),
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _soldByRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text('Sold by:'),
-        Text('example'),
-        Text('free delivery'),
-      ],
-    );
-  }
-
-  Widget _orderTrackingRow() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Divider(),
-        Text('Order Tracking:'),
-        Row(
-          children: [
-            Text('Order Placed:'),
-            Text('1117 AM, 12 February, 2024'),
-          ],
-        ),
-        Row(
-          children: [
-            Text('Shipped:'),
-            Text('Enter shipping Date'),
-          ],
-        ),
-        Row(
-          children: [
-            Text('Delivered:'),
-            Text('Enter Deliver Date'),
-          ],
-        ),
-        Divider(), 
-      ],
-    );
-  }
-Widget _orderDetailsRow(BuildContext context) { // Add context argument here
-  String? _selectedOption;
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Divider(),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Order Status:',
-            style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          TextButton(
-            onPressed: () {
-              showModalBottomSheet(
-                context: context, // Use the context passed from the outer method
-                builder: (BuildContext context) {
-                  return Container(
-                    height: 200.0,
-                    child: Column(
-                      children: [
-                        RadioListTile<String>(
-                          title: Text('Processing'),
-                          value: 'Processing',
-                          groupValue: _selectedOption,
-                          onChanged: (value) {
-                            _selectedOption = value;
-                            Navigator.pop(context);
-                          },
-                        ),
-                        RadioListTile<String>(
-                          title: Text('Pending'),
-                          value: 'Pending',
-                          groupValue: _selectedOption,
-                          onChanged: (value) {
-                            _selectedOption = value;
-                            Navigator.pop(context);
-                          },
-                        ),
-                        RadioListTile<String>(
-                          title: Text('Completed'),
-                          value: 'Completed',
-                          groupValue: _selectedOption,
-                          onChanged: (value) {
-                            _selectedOption = value;
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-            child: Text('Select Status'),
-          ),
-        ],
+        ),
       ),
-      Divider(),
-    ],
-  );
-}
-
-
-  Widget _priceDetailsRow() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Divider(),
-        Text('Price Details (1 item)'),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Total Product Price'),
-            Text('₹700'),
-          ],
-        ),
-        TextButton(
-          onPressed: () => print('View price details pressed'),
-          child: Text('view price details'),
-        ),
-      ],
     );
+  }
+
+  void updateOrderStatus(String orderId, String? status) {
+    // Implement your logic to update order status in Firestore
+    // For example:
+    FirebaseFirestore.instance.collection('cart_summary').doc(orderId).update({
+      'Status': status,
+    }).then((value) {
+      log('Order status updated successfully');
+      // Optionally, you can navigate back or show a success message
+    }).catchError((error) {
+      log('Failed to update order status: $error');
+      // Handle errors here
+    });
   }
 }

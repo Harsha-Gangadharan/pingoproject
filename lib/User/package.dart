@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/User/addbankdetail.dart';
 import 'package:flutter_application_1/User/artistconfirmation.dart';
 import 'package:flutter_application_1/User/cartpage.dart';
-import 'package:flutter_application_1/User/chatscreen.dart';
+import 'package:flutter_application_1/User/risktask.dart';
+import 'package:flutter_application_1/chatroom/chatscreen.dart';
 import 'package:flutter_application_1/User/expopage.dart';
 import 'package:flutter_application_1/User/hompage.dart';
-import 'package:flutter_application_1/User/message.dart';
+import 'package:flutter_application_1/chatroom/message.dart';
 import 'package:flutter_application_1/User/order.dart';
 import 'package:flutter_application_1/User/proflie.dart';
 import 'package:flutter_application_1/User/search.dart';
@@ -25,7 +26,7 @@ class _PackagesState extends State<Packages> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   final List<Widget> _pages = [
-  const Home(),
+  const HomePage(),
   SearchPage(),
   ArtistConfirm(expoId: "",),
   OrderPage(),

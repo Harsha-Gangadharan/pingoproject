@@ -3,17 +3,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class NotificationModel {
   String ?notid;
-  String message;
-  String fromId;
-  String toID;
-  String type;
+  String? message;
+  String ?fromId;
+  String ?toID;
+  String ?type;
 
   NotificationModel(
-      {required this.fromId,
-      required this.message,
+      {  this.fromId,
+        this.message,
        this.notid,
-      required this.toID,
-      required this.type});
+        this.toID,
+        this.type});
 
   Map<String, dynamic> toJson(id) => {
         "notid": id,
@@ -31,6 +31,8 @@ class NotificationModel {
         toID: json["toID"],
         type: json["type"]);
   }
+
+  static fromMap(Map<String, dynamic> data) {}
 }
 
 
@@ -50,3 +52,6 @@ getCurrentUserNotification(){
   return  FirebaseFirestore.instance.collection("Notifications").where("toID",isEqualTo:FirebaseAuth.instance.currentUser!.uid).snapshots();
 
 }
+
+
+// Stream 

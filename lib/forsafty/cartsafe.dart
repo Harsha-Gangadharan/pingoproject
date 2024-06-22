@@ -16,6 +16,8 @@ class CartSummary extends StatefulWidget {
 
   @override
   State<CartSummary> createState() => _CartSummaryState();
+
+  static Future<CartSummary> (Map<String, dynamic> data) {}
 }
 
 class _CartSummaryState extends State<CartSummary> {

@@ -125,7 +125,7 @@ class _ExpoPaymentState extends State<ExpoPayment> {
 
                      
                           showDragHandle: true,
-                          context: context, builder: (context) =>ShowPaymentoptions(totalAMount:double.parse(widget.expo["Price"],) ,page: "Admin",),
+                          context: context, builder: (context) =>ShowPaymentoptions(totalAMount:double.parse(widget.expo["Price"],) ,page: "Admin",selectedOption: 0,),
                           );
                     
                       },
