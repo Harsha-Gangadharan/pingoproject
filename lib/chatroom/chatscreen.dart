@@ -214,13 +214,45 @@ import 'package:bottom_bar_with_sheet/bottom_bar_with_sheet.dart';
 //   });
 // }
 
-class Chatscreen extends StatelessWidget {
+class Chatscreen extends StatefulWidget {
   const Chatscreen({super.key});
 
   @override
+  State<Chatscreen> createState() => _ChatscreenState();
+}
+
+class _ChatscreenState extends State<Chatscreen> {
+  @override
   Widget build(BuildContext context) {
+
+    String searchQuery = '';
     return Scaffold(
-      body: buildUserlist(),
+      
+      body: SafeArea(
+        child: Column(
+          children: [
+            SizedBox(),
+            // Padding(
+            //   padding: const EdgeInsets.all(8.0),
+            //   child: TextFormField(
+            //     decoration: InputDecoration(
+            //       hintText: 'Search Users',
+            //       border: OutlineInputBorder(
+                    
+            //       ),
+                  
+            //     ),
+            //     onChanged: (value) {
+            //     setState(() {
+            //         searchQuery = value.toLowerCase();
+            //       });
+            //     },
+            //   ),
+            // ),
+            Expanded(child: buildUserlist()),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -232,6 +264,10 @@ Widget buildUserlist() {
       if (snapshot.connectionState == ConnectionState.waiting) {
         return Center(child: CircularProgressIndicator());
       }
+
+      //  final filteredUsers = snapshot.data!
+      //       .where((user) => user['username'].toString().toLowerCase().contains(searchQuery))
+      //       .toList();
       return ListView(
           children: snapshot.data!
               .map<Widget>((userdata) => buildUserListitem(userdata, context))
@@ -287,11 +323,11 @@ class UserTile extends StatelessWidget {
                 width: 10,
               ),
               Text(text),
-              Spacer(),
-              CircleAvatar(
-                radius: 10,
-                child: Text('5'),
-              )
+              // Spacer(),
+              // CircleAvatar(
+              //   radius: 10,
+              //   child: Text('5'),
+              // )
             ],
           ),
         ),

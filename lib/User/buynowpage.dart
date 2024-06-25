@@ -1,17 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/User/addaddress.dart';
 import 'package:flutter_application_1/User/cartpaymentmethod.dart';
-import 'package:flutter_application_1/User/paymentmethod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class BuynowPage extends StatefulWidget {
-  final String productId; // Add a parameter for the product ID
+  final String productId;
   final String userProfileImage;
   final String userName;
-  
-  BuynowPage({required this.productId, required this.userProfileImage, required this.userName});
+
+  BuynowPage({
+    required this.productId,
+    required this.userProfileImage,
+    required this.userName,
+  });
 
   @override
   _BuynowPageState createState() => _BuynowPageState();
@@ -19,7 +21,6 @@ class BuynowPage extends StatefulWidget {
 
 class _BuynowPageState extends State<BuynowPage> {
   int quantity = 1;
-  
   late String currentUserId;
 
   @override
@@ -42,10 +43,6 @@ class _BuynowPageState extends State<BuynowPage> {
     });
   }
 
-  // double calculateTotalPrice() {
-  //   return quantity * itemPrice;
-  // }
-
   Future<DocumentSnapshot<Map<String, dynamic>>> getProductDetails() {
     return FirebaseFirestore.instance.collection("productdetails").doc(widget.productId).get();
   }
@@ -58,44 +55,30 @@ class _BuynowPageState extends State<BuynowPage> {
     return FirebaseFirestore.instance.collection("useregisteration").doc(userId).get();
   }
 
-  Future<void> placeOrder(  payment) async {
-    // Get product and seller details
-    DocumentSnapshot<Map<String, dynamic>> productSnapshot = await getProductDetails();
-    DocumentSnapshot<Map<String, dynamic>> sellerSnapshot = await getSellerDetails(productSnapshot.data()?["uid"]);
+  Future<void> addToCart(Map<String, dynamic> productData) async {
+    final cartRef = FirebaseFirestore.instance.collection('cart').doc(widget.productId);
 
-    // Get user's address
-    DocumentSnapshot<Map<String, dynamic>> addressSnapshot = await getUserAddress();
-    
-    // Prepare data to be stored in buynow collection
-    Map<String, dynamic> orderData = {
+    await cartRef.set({
       'productId': widget.productId,
-      'productName': productSnapshot.data()?["description"] ?? "",
-      'productImage': productSnapshot.data()?["productimage"] ?? "",
-      'sellerId': productSnapshot.data()?["uid"],
-      'sellerName': sellerSnapshot.data()?["username"] ?? "",
-      'buyerId': currentUserId,
-      'buyerAddress': {
-        'houseNumber': addressSnapshot.data()?["address.houseNumber"] ?? "",
-        'roadAreaColony': addressSnapshot.data()?["address.roadAreaColony"] ?? "",
-        'nearFamousPlace': addressSnapshot.data()?["address.nearFamousPlace"] ?? "",
-        'city': addressSnapshot.data()?["address.city"] ?? "",
-        'state': addressSnapshot.data()?["address.state"] ?? "",
-        'pincode': addressSnapshot.data()?["address.pincode"] ?? "",
-        'contactNumber': addressSnapshot.data()?["address.contactNumber"] ?? "",
-        'name': addressSnapshot.data()?["address.name"] ?? "",
-      },
-      'quantity': quantity,
-      // 'totalPrice': calculateTotalPrice(),
-      'orderTime': Timestamp.now(),
-    };
+      'uid': currentUserId,
+      'productData': productData,
+      'qty': quantity,
+      'amount': productData["amount"],
+      'category': productData["category"],
+      'description': productData["description"],
+      'productimage': productData["productimage"],
+      'sellerid': productData["uid"]
+    });
+  }
 
-    // Add order details to buynow collection
-    await FirebaseFirestore.instance.collection("cart").add(orderData);
+  Future<void> placeOrder(String payment, Map<String, dynamic> productData) async {
+    // Add product to cart
+    await addToCart(productData);
 
     // Navigate to payment page or any confirmation page
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => CartPayment(totalPay: double.parse(payment),)),
+      MaterialPageRoute(builder: (context) => CartPayment(totalPay: double.parse(payment))),
     );
   }
 
@@ -124,10 +107,9 @@ class _BuynowPageState extends State<BuynowPage> {
             );
           }
           final productData = productSnapshot.data!.data();
-        final  itemPrice = productData?["amount"] ;
+          final itemPrice = productData?["amount"];
 
-
-          String payment = itemPrice.toString();
+          String payment = (itemPrice * quantity).toString();
 
           return SingleChildScrollView(
             child: Column(
@@ -154,7 +136,7 @@ class _BuynowPageState extends State<BuynowPage> {
                         children: [
                           Text(
                             productData?["description"] ?? "",
-                            style: TextStyle(fontSize: 20.0),
+                            style: TextStyle(fontSize: 15.0),
                           ),
                         ],
                       ),
@@ -177,9 +159,7 @@ class _BuynowPageState extends State<BuynowPage> {
                       Spacer(),
                       IconButton(
                         icon: Icon(Icons.remove_circle),
-                        onPressed:(){
-                           decrementQuantity();
-                        },
+                        onPressed: decrementQuantity,
                       ),
                       Text('Qty: $quantity'),
                       IconButton(
@@ -266,16 +246,15 @@ class _BuynowPageState extends State<BuynowPage> {
                     height: 50.0,
                     width: 200,
                     child: ElevatedButton(
-                      onPressed:(){
-                         placeOrder(payment);
+                      onPressed: () {
+                        placeOrder(payment, productData!);
                       },
                       style: ElevatedButton.styleFrom(
-                        shadowColor:  Color.fromARGB(183, 225, 56, 132), // Button color
+                        shadowColor: Color.fromARGB(183, 225, 56, 132), // Button color
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                         
                           SizedBox(width: 8),
                           Center(
                             child: Text(

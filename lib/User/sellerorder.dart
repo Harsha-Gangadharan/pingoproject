@@ -37,30 +37,44 @@ class SellerOrderPage extends StatelessWidget {
     return snapshot.docs;
   }
 
+  
+
   Future<List<dynamic>> getAllItems() async {
     List<dynamic> fullItems = [];
     List<dynamic> sortedList = [];
 
-    await fetchCartSummery().then((list) {
-      for (var i in list) {
-        if (i["items"] != null || i["items"].isNotEmpty) {
-          for (var j in i["items"]) {
-            fullItems.add(j);
-            sortedList = fullItems
-                .where((element) =>
-                    element["sellerUid"] ==
-                    FirebaseAuth.instance.currentUser!.uid)
-                .toList();
+    await fetchCartSummery().then(
+      (list) {
+        for (var i in list) {
+          final id = i.id;
+          log(id);
+         
+          if (i["items"] != null || i["items"].isNotEmpty) {
+            for (var j in i["items"]) {
+              j['id'] = id; // Add the document ID to each item
+              fullItems.add(j);
+            }
           }
         }
-      }
-    },
+        sortedList = fullItems
+            .where((element) =>
+                element["sellerUid"] == FirebaseAuth.instance.currentUser!.uid)
+            .toList();
+      },
     );
-
-    log(sortedList.length.toString());
 
     return sortedList;
   }
+
+  Future<List<String>> fetchCartSummary() async {
+    QuerySnapshot<Map<String, dynamic>> snapshot =
+        await FirebaseFirestore.instance.collection('cart_summary').get();
+
+    List<String> ids = snapshot.docs.map((doc) => doc.id).toList();
+    return ids;
+  }
+
+// snapshot.data!.first.toString()
 
   @override
   Widget build(BuildContext context) {
@@ -94,15 +108,17 @@ class SellerOrderPage extends StatelessWidget {
                       leading: GestureDetector(
                         onTap: () {
                           // Navigate to the product details screen
+                          // log(data[index]['id']);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => YourOrderDetails(
                                 product: data[index],
+                                id: data[index]['id'],
                               ),
                             ),
                           );
-                         
+                           
                         },
                         child: Image.network(data[index]['productImage']),
                       ),
@@ -112,9 +128,10 @@ class SellerOrderPage extends StatelessWidget {
                     );
                   },
                   separatorBuilder: (context, index) => SizedBox(
-                        height: 20,
-                      ),
-                  itemCount: data.length);
+                    height: 20,
+                  ),
+                  itemCount: data.length,
+                );
         },
       ),
     );

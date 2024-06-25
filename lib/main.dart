@@ -24,6 +24,7 @@ import 'package:flutter_application_1/User/cancelorder.dart';
 import 'package:flutter_application_1/User/cartpage.dart';
 import 'package:flutter_application_1/User/cartpaymentmethod.dart';
 import 'package:flutter_application_1/User/cartsummery.dart';
+import 'package:flutter_application_1/User/complaintprovider.dart';
 import 'package:flutter_application_1/chatroom/chatscreen.dart';
 import 'package:flutter_application_1/User/expopage.dart';
 import 'package:flutter_application_1/User/expovote.dart';
@@ -56,7 +57,9 @@ WidgetsFlutterBinding.ensureInitialized();
 await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
 );
-  runApp(const MyApp());
+ runApp(
+    MyApp(),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -65,7 +68,10 @@ class MyApp extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(providers: [ChangeNotifierProvider<PaymentController>(create: (_)=>PaymentController())],
+    return MultiProvider(providers: [
+      ChangeNotifierProvider<PaymentController>(create: (_)=>PaymentController()),
+      ChangeNotifierProvider(create: (context) => ComplaintProvider(),)
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Flutter Demo',
@@ -73,7 +79,10 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,
         ),
-      home:SplashScreen()
+      home:
+      SplashScreen()
+      
+      // AdHome()
       ),
     );
     

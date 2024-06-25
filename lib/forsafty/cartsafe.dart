@@ -12,7 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart'; // Import for date formatting
 
 class CartSummary extends StatefulWidget {
-  const CartSummary({Key? key}) : super(key: key);
+  const CartSummary({Key? key, required int selectedOption}) : super(key: key);
 
   @override
   State<CartSummary> createState() => _CartSummaryState();

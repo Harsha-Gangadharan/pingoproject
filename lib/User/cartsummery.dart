@@ -8,8 +8,10 @@ import 'package:flutter_application_1/User/order.dart';
 import 'package:flutter_application_1/User/orderconfirmed.dart';
 import 'package:flutter_application_1/User/package.dart';
 import 'package:flutter_application_1/crud/notification_model.dart';
+import 'package:flutter_application_1/model/ordersmodel.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart'; // Import for date formatting
+import 'package:intl/intl.dart';
+import 'package:random_string/random_string.dart'; // Import for date formatting
 
 class CartSummary extends StatefulWidget {
   const CartSummary({Key? key, required int selectedOption}) : super(key: key);
@@ -25,6 +27,7 @@ class _CartSummaryState extends State<CartSummary> {
   Map<String, int> quantities = {};
   Map<String, double> itemPrices = {};
   double total = 0.0;
+  OrderModel? orderMod;
 
   int selectedOption = -1;
 
@@ -111,75 +114,135 @@ class _CartSummaryState extends State<CartSummary> {
   String sellerUIDDDD = "";
 
   Future<String> saveCartSummary() async {
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
 
     List<Map<String, dynamic>> items = [];
     for (var item in cartItems) {
-    var data = item.data() as Map<String, dynamic>;
-    var productId = data['productId'];
-    var qty = quantities[item.id]!;
-    var amount = itemPrices[productId]!;
+      var data = item.data() as Map<String, dynamic>;
+      var productId = data['productId'];
+      var qty = quantities[item.id]!;
+      var amount = itemPrices[productId]!;
 
-    // Fetch product details
-    DocumentSnapshot productSnapshot = await getProductDetails(productId);
-    if (productSnapshot.exists) {
-      var productData = productSnapshot.data() as Map<String, dynamic>;
-      String productImage = productData['productimage'];
+      // Fetch product details
+      DocumentSnapshot productSnapshot = await getProductDetails(productId);
+      if (productSnapshot.exists) {
+        var productData = productSnapshot.data() as Map<String, dynamic>;
+        String productImage = productData['productimage'];
 
-      // Fetch seller details
-      var sellerData = await getSellerDetails(productData['uid']);
-      String sellerImage = sellerData?['image'] ?? '';
-      String sellerName = sellerData?['name'] ?? '';
-      String sellerUid = productData['uid'] ?? '';
+        // Fetch seller details
+        var sellerData = await getSellerDetails(productData['uid']);
+        String sellerImage = sellerData?['image'] ?? '';
+        String sellerName = sellerData?['name'] ?? '';
+        String sellerUid = productData['uid'] ?? '';
 
-      // Add buyer address
-      final addressSnapshot = await getUserAddress();
-      if (addressSnapshot.exists && addressSnapshot.data != null) {
-        final addressData = addressSnapshot.data() as Map<String, dynamic>;
-        items.add({
-          'productId': productId,
-          'qty': qty,
-          'amount': amount,
-          'productImage': productImage,
-          'sellerImage': sellerImage,
-          'sellerName': sellerName,
-          'sellerUid': sellerUid,
-          'buyerAddress': {
-            'name': addressData?["address.name"] ?? "",
-            'address': {
-              'houseNumber': addressData?["address.houseNumber"] ?? "",
-              'roadAreaColony': addressData?["address.roadAreaColony"] ?? "",
-              'nearFamousPlace': addressData?["address.nearFamousPlace"] ?? "",
-              'city': addressData?["address.city"] ?? "",
-              'state': addressData?["address.state"] ?? "",
-              'pincode': addressData?["address.pincode"] ?? "",
+        // Add buyer address
+        final addressSnapshot = await getUserAddress();
+        if (addressSnapshot.exists && addressSnapshot.data != null) {
+          final addressData = addressSnapshot.data() as Map<String, dynamic>;
+          Map<String, dynamic> store = {
+            'productId': productId,
+            'qty': qty,
+            'amount': amount,
+            'productImage': productImage,
+            'sellerImage': sellerImage,
+            'sellerName': sellerName,
+            'sellerUid': sellerUid,
+            'buyerAddress': {
+              'name': addressData?["address.name"] ?? "",
+              'address': {
+                'houseNumber': addressData?["address.houseNumber"] ?? "",
+                'roadAreaColony': addressData?["address.roadAreaColony"] ?? "",
+                'nearFamousPlace':
+                    addressData?["address.nearFamousPlace"] ?? "",
+                'city': addressData?["address.city"] ?? "",
+                'state': addressData?["address.state"] ?? "",
+                'pincode': addressData?["address.pincode"] ?? "",
+              },
+              'contactNumber': addressData?["address.contactNumber"] ?? "",
             },
-            'contactNumber': addressData?["address.contactNumber"] ?? "",
-          },
-          'paymentMode': selectedOption == 0 ? "Cash on Delivery" : "Wallet/UPI",
-        });
+            'paymentMode':
+                selectedOption == 0 ? "Cash on Delivery" : "Wallet/UPI",
+          };
+          items.add(store);
+        }
+      }
+    }
+
+    // Save cart summary
+    DocumentReference docRef = firestore.collection('cart_summary').doc();
+    String docId = docRef.id; // Get the generated document ID
+    await docRef.set({
+      'uid': currentUserId,
+      'items': items,
+      'total': total,
+      'orderPlacedDate': FieldValue.serverTimestamp(),
+      'deliveryDate': 'within one month',
+      'Status': 'processing',
+      'id': docId, // Store the document ID in the document
+      'paymentMode': selectedOption == 0 ? "Wallet/UPI" : "Cash on Delivery",
+    });
+
+    // Return the document ID to be used elsewhere if needed
+    return docId;
+  }
+
+  // Order save to collection
+
+  Future<void> saveOrder() async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final addressSnapshot = await getUserAddress();
+    final addressData = addressSnapshot.data() as Map<String, dynamic>;
+
+    for (var item in cartItems) {
+      var data = item.data() as Map<String, dynamic>;
+      var productId = data['productId'];
+      var qty = quantities[item.id]!;
+      var amount = itemPrices[productId]!;
+
+      // Fetch product details
+      DocumentSnapshot productSnapshot = await getProductDetails(productId);
+      if (productSnapshot.exists) {
+        var productData = productSnapshot.data() as Map<String, dynamic>;
+        String productImage = productData['productimage'];
+        String productName = productData['description'];
+
+        // Fetch seller details
+        var sellerData = await getSellerDetails(productData['uid']);
+        String sellerImage = sellerData?['image'] ?? '';
+        String sellerName = sellerData?['name'] ?? '';
+        String sellerUid = productData['uid'] ?? '';
+
+        // Create a new document reference for the order
+        DocumentReference orderDocRef = firestore.collection('orders').doc();
+        String orderId = orderDocRef.id; // Get the auto-generated document ID
+
+        OrderModel orderMod = OrderModel(
+          orderId: orderId,
+          sellerName: sellerName,
+          sellerId: sellerUid,
+          productId: productId,
+          productImage: productImage,
+          productName: productName,
+          amount: amount,
+          quantity: qty,
+          userId: currentUserId,
+          userName: addressData["address.name"],
+          paymentMode: selectedOption == 0 ? "Cash on Delivery" : "Wallet/UPI",
+          city: addressData["address.city"],
+          houseNumber: addressData["address.houseNumber"],
+          roadAreaColony: addressData["address.roadAreaColony"],
+          nearFamousPlace: addressData["address.nearFamousPlace"],
+          state: addressData["address.state"],
+          pincode: addressData["address.pincode"],
+          contactNumber: addressData["address.contactNumber"],
+          status: 'Pending'
+        );
+
+        // Save order to Firestore
+        await orderDocRef.set(orderMod.toMap());
       }
     }
   }
-
-  // Save cart summary
-  DocumentReference docRef = firestore.collection('cart_summary').doc();
-  String docId = docRef.id; // Get the generated document ID
-  await docRef.set({
-    'uid': currentUserId,
-    'items': items,
-    'total': total,
-    'orderPlacedDate': FieldValue.serverTimestamp(),
-    'deliveryDate': 'within one month',
-    'Status': 'processing',
-    'id': docId, // Store the document ID in the document
-    'paymentMode': selectedOption == 0 ? "Wallet/UPI" : "Cash on Delivery",
-  });
-
-  // Return the document ID to be used elsewhere if needed
-  return docId;
-}
-
 
   String getCurrentDate() {
     final now = DateTime.now();
@@ -443,7 +506,8 @@ class _CartSummaryState extends State<CartSummary> {
                           sendNotiifcation(
                             NotificationModel(
                               fromId: FirebaseAuth.instance.currentUser!.uid,
-                              message: "Your Product is order by ${FirebaseAuth.instance.currentUser!.uid}",
+                              message:
+                                  "Your Product is order by ${FirebaseAuth.instance.currentUser!.uid}",
                               toID: sellerUIDDDD,
                               type: "User",
                             ),
@@ -457,17 +521,10 @@ class _CartSummaryState extends State<CartSummary> {
                                       )),
                               (route) => false);
                         });
+                        await saveOrder();
                       });
 
-                      // .then((value) {
-
-                      // //  removefromcart(productId);
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //       builder: (context) =>  OrderPage()),
-                      // );
-                      // });
+                      await saveOrder();
                     },
                     style: ElevatedButton.styleFrom(
                         backgroundColor:

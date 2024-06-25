@@ -332,7 +332,7 @@ Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context)=>Pack
                 children: [
                   Text(
                     productData["description"] ?? "",
-                    style: const TextStyle(fontSize: 20.0),
+                    style: const TextStyle(fontSize: 15.0),
                   ),
                 ],
               ),

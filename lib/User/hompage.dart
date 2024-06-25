@@ -4,10 +4,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/User/blockmessage.dart';
+import 'package:flutter_application_1/User/complaintprovider.dart';
+import 'package:flutter_application_1/User/notification.dart';
 import 'package:flutter_application_1/User/proflie.dart';
 import 'package:flutter_application_1/chatroom/chatscreen.dart';
+import 'package:flutter_application_1/chatroom/message.dart';
 import 'package:flutter_application_1/crud/model.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import 'buynowpage.dart';
 import 'cartpage.dart';
@@ -120,16 +125,6 @@ class _HomeState extends State<HomePage> {
   followUser(anothorUserId) async {
     final currentUserId = FirebaseAuth.instance.currentUser!.uid;
 
-// final snapshot=await FirebaseFirestore.instance
-//         .collection("followers")
-//         .doc(currentUserId+anothorUserId).get();
-// List followersList=[];
-//         if(snapshot.exists){
-
-// final foo=snapshot.data()!["Followers"] as List;
-// followersList=foo.map((e) => e).toList();
-//         }
-// followersList.add(anothorUserId);
     final collection =
         FirebaseFirestore.instance.collection("useregisteration");
     collection
@@ -159,32 +154,6 @@ class _HomeState extends State<HomePage> {
         .doc(currentUserId)
         .delete();
   }
-
-  // void _toggleFollowing(String userId) async {
-  //   final currentUserId = FirebaseAuth.instance.currentUser!.uid;
-  //   final followersRef =
-  //       FirebaseFirestore.instance.collection('followers').doc(currentUserId);
-
-  //   final followersDoc = await followersRef.get();
-  //   if (followersDoc.exists) {
-  //     // If the document already exists, update the "following" field
-  //     List<String> followingList =
-  //         List<String>.from(followersDoc.data()!['following'] ?? []);
-  //     if (followingList.contains(currentUserId)) {
-  //       // If the current user is already in the following list, remove them
-  //       followingList.remove(currentUserId);
-  //     } else {
-  //       // Otherwise, add the current user to the following list
-  //       followingList.add(userId);
-  //     }
-  //     await followersRef.update({'Followers': followingList});
-  //   } else {
-  //     // If the document does not exist, create a new one
-  //     await followersRef.set({
-  //       'following': [currentUserId]
-  //     });
-  //   }
-  // }
 
   Future<bool> isProductInCart(String productId) async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
@@ -303,6 +272,8 @@ class _HomeState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+
+    final provider =Provider.of<ComplaintProvider>(context);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 212, 94, 133),
@@ -427,15 +398,6 @@ class _HomeState extends State<HomePage> {
                                                             data[index]["uid"]),
                                                     builder:
                                                         (context, snapshot) {
-                                                      // bool following=false;
-
-                                                      // if (snapshot.hasData) {
-                                                      //   log("true");
-                                                      //   following = true;
-                                                      // } else {
-                                                      //   log("false");
-                                                      //   following = false;
-                                                      // }
                                                       if (snapshot.hasData) {
                                                         return ElevatedButton(
                                                           onPressed: () {
@@ -479,25 +441,28 @@ class _HomeState extends State<HomePage> {
                                             PopupMenuButton(itemBuilder:
                                                 (BuildContext context) {
                                               return [
-                                                const PopupMenuItem(
+                                                  PopupMenuItem(
+                                                  onTap: () {
+                                                    provider.incrementComplaints(data[index]['uid'],data[index]['productId']);
+                                                    log('cound of the user raise button=============${provider.complaintsCount}======================= ');
+                                                  },
                                                   child: Row(
                                                     children: [
-                                                      Icon(Icons.share),
-                                                      Text('Share')
+                                                      Icon(Icons.back_hand),
+                                                      Text('Rise Complains')
                                                     ],
                                                   ),
-                                                  value: 'Share',
+                                                  value: 'Rise Complains',
                                                 ),
-                                                const PopupMenuItem(
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(Icons.delete),
-                                                      Text('Delete')
-                                                    ],
-                                                  ),
-                                                  value: 'Delete',
-                                                ),
-                                                const PopupMenuItem(
+                                                  PopupMenuItem(
+                                                  onTap: () {
+                                                    Navigator.push(context, MaterialPageRoute(builder: (context) {
+                                                      return MessageScreen(
+                                                        reciverID: data[index]['uid'],
+                                                        reciveremail: userData?["email"],
+                                                      );
+                                                    },));
+                                                  },
                                                   child: Row(
                                                     children: [
                                                       Icon(Icons.message),
@@ -518,10 +483,10 @@ class _HomeState extends State<HomePage> {
                                               ];
                                             }, onSelected: (value) {
                                               switch (value) {
-                                                case 'Share':
+                                                case 'Rise Complains':
                                                   // Handle Share action
                                                   break;
-                                                case 'Unfollow':
+                                                case 'Send Message':
                                                   // Handle Unfollow action
                                                   break;
                                                 case 'Report':
@@ -610,8 +575,9 @@ class _HomeState extends State<HomePage> {
                                                       productImage: data[index]
                                                           ["productimage"],
                                                       productId: data[index]
-                                                          ['productId'], 
-                                                          sellerId: data[index]['uid'],
+                                                          ['productId'],
+                                                      sellerId: data[index]
+                                                          ['uid'],
                                                     ),
                                                   ),
                                                 );

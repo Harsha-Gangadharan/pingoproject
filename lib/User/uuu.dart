@@ -1,61 +1,46 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/widgets.dart';
 import 'dart:developer';
 
 import 'package:flutter_application_1/User/notification.dart';
-import 'package:flutter_application_1/model/ordersmodel.dart';
 
-class YourOrderDetails extends StatefulWidget {
+class Yourpage extends StatefulWidget {
   final Map<String, dynamic> product;
-  String id;
 
-  YourOrderDetails({required this.product,required this.id});
+  Yourpage({required this.product});
 
   @override
-  State<YourOrderDetails> createState() => _YourOrderDetailsState();
+  State<Yourpage> createState() => _YourpageState();
 }
 
-class _YourOrderDetailsState extends State<YourOrderDetails> {
+class _YourpageState extends State<Yourpage> {
   final status = ['Processing', 'Pending', 'Completed'];
   String? selectedStatus;
 
-  Stream  getProductid() {
+  Stream<QuerySnapshot<Map<String, dynamic>>> getProductid() {
     return FirebaseFirestore.instance
-        .collection('orders')
-        .where('userId', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
+        .collection('cart_summary')
+        .where('uid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
         .snapshots();
   }
 
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
       fetchCartSummerye() async {
-    QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
-        .instance
-        .collection('cart_summary')
-        .where('uid', isEqualTo: auth.currentUser!.uid)
+    QuerySnapshot<Map<String, dynamic>> snapshot =
+        await FirebaseFirestore.instance.collection('cart_summary')
+        .where('uid',isEqualTo: auth.currentUser!.uid)
         .get();
 
     return snapshot.docs;
   }
 
-  List<OrderModel> list = [];
-  Future getOrder() async {
-    final snapshot = await db.collection('orders').get();
-
-    list = snapshot.docs.map((e) {
-      return OrderModel.fromjsone(e.data());
-    }).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      
       child: Scaffold(
         appBar: AppBar(
           title: Text('Your Order Details'),
-          
         ),
         body: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -63,12 +48,10 @@ class _YourOrderDetailsState extends State<YourOrderDetails> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                FutureBuilder(
-                  future: fetchCartSummerye(),
-                  builder: (context, snapshot) {
-                    return Text('');
-                  },
-                ),
+                FutureBuilder(future: fetchCartSummerye(), builder: (context, snapshot) {
+                  return Text(
+                    '');
+                },),
                 SizedBox(height: 10),
                 Text('Seller Name: ${widget.product['sellerName']}'),
                 Image.network(widget.product['productImage']),
@@ -100,24 +83,34 @@ class _YourOrderDetailsState extends State<YourOrderDetails> {
                   },
                 ),
                 SizedBox(height: 20),
-                StreamBuilder(
+                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                   stream: getProductid(),
                   builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    }
+                    if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    }
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return Text('No data found');
+                    }
 
-                     
-                      
+                    final docs = snapshot.data!.docs;
                     return ElevatedButton(
                       onPressed: () {
-                        db.collection('cart_summary').doc(widget.id).update({
-                          'Status':selectedStatus.toString(),
-                        });
-
+                        
+                        for (var doc in docs) {
+                          log('Document ID: ${doc.id}');
+                          // FirebaseFirestore.instance.collection("cart_summary").doc().update(data);
+                           
+                        }
+ 
                       },
                       child: Text('Update Status'),
                     );
                   },
                 ),
-                SizedBox(height: 50,)
               ],
             ),
           ),

@@ -2,10 +2,12 @@ import 'dart:developer';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class OrderPage extends StatelessWidget {
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,6 +57,9 @@ class OrderPage extends StatelessWidget {
                       var qty = (item['qty'] as num?)?.toInt() ?? 0;
                       var sellerName = item['sellerName'] as String? ?? 'Unknown seller';
                       var sellerImage = item['sellerImage'] as String? ?? 'https://via.placeholder.com/150';
+                      var status = data['Status'] as String? ?? '';
+
+                      
 
                       return Container(
                         // height: 20,
@@ -66,6 +71,7 @@ class OrderPage extends StatelessWidget {
                           qty: qty,
                           sellerName: sellerName,
                           sellerImage: sellerImage,
+                          status: status,
                         ),
                       );
                     },
@@ -89,6 +95,7 @@ class OrderListItem extends StatelessWidget {
   final int qty;
   final String sellerName;
   final String sellerImage;
+  final String status;
 
   const OrderListItem({
     Key? key,
@@ -98,10 +105,41 @@ class OrderListItem extends StatelessWidget {
     required this.qty,
     required this.sellerName,
     required this.sellerImage,
+    required this.status,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    Future<void> _showMyDialog() async {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false, // user must tap button!
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('YOUR PROUDCUT STATUS'),
+        content:   SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              Text('PRODUCT STATUS :${status}'),
+ 
+            ],
+          ),
+        ),
+        actions: <Widget>[
+         Container(
+          height: 150,
+          decoration: BoxDecoration(
+            image: DecorationImage(image: NetworkImage(productImage))
+          ),
+         ),
+         IconButton(onPressed: (){
+          Navigator.pop(context);
+         }, icon: Icon(Icons.close))
+        ],
+      );
+    },
+  );
+}
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
@@ -115,7 +153,7 @@ class OrderListItem extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                  '02th February'), // Static date, you can replace with dynamic value if needed
+                  '02th February'),  
             ],
           ),
           const SizedBox(height: 10.0),
@@ -131,8 +169,13 @@ class OrderListItem extends StatelessWidget {
           const SizedBox(height: 5.0),
           Row(
             children: [
-              Image.network(productImage,
-                  width: 50, height: 50), // Using product image from network
+              InkWell(
+                onTap: () {
+                _showMyDialog();  
+                },
+                child: Image.network(productImage,
+                    width: 50, height: 50),
+              ), // Using product image from network
               const Spacer(),
               Text('Qty: $qty'),
             ],
