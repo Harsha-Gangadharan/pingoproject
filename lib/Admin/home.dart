@@ -1,9 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/Admin/expopayment.dart';
+import 'package:flutter_application_1/Admin/login.dart';
+import 'package:flutter_application_1/User/notification.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_application_1/Admin/expo.dart';
 import 'package:flutter_application_1/Admin/manageuser.dart';
+import 'package:shared_preferences/shared_preferences.dart';
  // Import the new page
 
 class AdHome extends StatefulWidget {
@@ -38,63 +41,63 @@ class _AdHomeState extends State<AdHome> {
             color: Colors.black,
           ),
         ),
-        actions: [
-          Row(
-            children: [
-              SizedBox(width: 20.0),
-              GestureDetector(
-                onTap: _logout,
-                child: Icon(
-                  Icons.logout,
-                  color: Colors.black,
-                ),
-              ),
-              SizedBox(width: 20.0),
-              GestureDetector(
-                onTap: _navigateToPalette,
-                child: Icon(
-                  Icons.palette,
-                  color: Colors.black,
-                ),
-              ),
-              SizedBox(width: 20.0),
-              PopupMenuButton(
-                itemBuilder: (BuildContext context) {
-                  return <PopupMenuEntry>[
-                    PopupMenuItem(
-                      child: GestureDetector(
-                        onTap: _navigateToHome,
-                        child: Row(
-                          children: [
-                            Icon(Icons.home),
-                            SizedBox(width: 8.0),
-                            Text('Home')
-                          ],
-                        ),
-                      ),
-                      value: 1,
-                    ),
-                    PopupMenuItem(
-                      child: Row(
-                        children: [
-                          Icon(Icons.people),
-                          SizedBox(width: 8.0),
-                          Text('View Users')
-                        ],
-                      ),
-                      value: 2,
-                    ),
-                  ];
-                },
-                onSelected: (value) {
-                  if (value == 2) {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => ManageUser()));
-                  }
-                },
-              ),
-            ],
+       actions: [
+  Row(
+    children: [
+      SizedBox(width: 20.0),
+      GestureDetector(
+        onTap: () {
+          _showLogoutBottomSheet(context); // Pass context to show bottom sheet
+        },
+        child: Icon(
+          Icons.logout,
+          color: Colors.black,
+        ),
+      ),
+      SizedBox(width: 20.0),
+      GestureDetector(
+        onTap: _navigateToPalette,
+        child: Icon(
+          Icons.palette,
+          color: Colors.black,
+        ),
+      ),
+      SizedBox(width: 20.0),
+      PopupMenuButton<int>(
+        itemBuilder: (BuildContext context) => [
+          PopupMenuItem<int>(
+            value: 1,
+            child: Row(
+              children: [
+                Icon(Icons.home),
+                SizedBox(width: 8.0),
+                Text('Home'),
+              ],
+            ),
+          ),
+          PopupMenuItem<int>(
+            value: 2,
+            child: Row(
+              children: [
+                Icon(Icons.people),
+                SizedBox(width: 8.0),
+                Text('View Users'),
+              ],
+            ),
           ),
         ],
+        onSelected: (int value) {
+          if (value == 1) {
+            _navigateToHome();
+          } else if (value == 2) {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => ManageUser()));
+          }
+        },
+      ),
+    ],
+  ),
+],
+
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('expo').snapshots(),
@@ -139,4 +142,48 @@ class _AdHomeState extends State<AdHome> {
       ),
     );
   }
+  void _showLogoutBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.3,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Are you sure you want to logout?',
+                style: TextStyle(fontSize: 18),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () async {
+                      SharedPreferences preferences =
+                          await SharedPreferences.getInstance();
+                      await auth.signOut();
+                      preferences.clear();
+                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => AdminLogin(),), (route) => false);
+                      print('Logout confirmed');
+                    },
+                    child: const Text('Logout'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
+
+

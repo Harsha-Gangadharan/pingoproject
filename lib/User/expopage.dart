@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/User/expovote.dart';
+import 'package:flutter_application_1/User/package.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -70,6 +71,10 @@ class _ArtExpoState extends State<ArtExpo> {
           ),
         ],
       ),
+       bottomNavigationBar: MyNav(index:0, onTap: (index){
+  setState(() {
+Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context)=>Packages(indexNum: index)))   ;       });
+       }, firestore:  FirebaseFirestore.instance, auth: FirebaseAuth.instance),
     );
   }
 }

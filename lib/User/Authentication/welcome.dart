@@ -16,6 +16,11 @@ class _WelcomeState extends State<Welcome> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor:  Color(0xffE13884),
+         title: const Text('WELCOME'),
+        titleTextStyle: GoogleFonts.inknutAntiqua(
+          fontSize: 26,
+          color: const Color.fromARGB(255, 14, 14, 14),
+        ),
       ),
       body: Stack(
         children: [Container(

@@ -12,7 +12,6 @@ class ChatService {
     return db.collection('useregisteration').snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         final user = doc.data();
-
         return user;
       }).toList();
     });
@@ -31,34 +30,27 @@ class ChatService {
       timestamp: timestamp,
     );
 
-    List<String> ids = [curentuserid,reciverID];
-
-    ids.sort();
-
-    String chatroom = ids.join('_');
-
+    String chatroom = getChatRoomId(curentuserid, reciverID);
 
     await db.collection('Chatroom')
-    .doc(chatroom)
-    .collection('message')
-    .add(newmessage.toJsone());
-
-
-
+        .doc(chatroom)
+        .collection('message')
+        .add(newmessage.toJsone());
   }
 
-  Stream<QuerySnapshot> getMessage(String userid,String otheruserid){
-    List<String> ids = [userid ,otheruserid];
+  Stream<QuerySnapshot> getMessage(String userid, String otheruserid) {
+    String chatroom = getChatRoomId(userid, otheruserid);
 
-     ids.sort();
+    return db.collection('Chatroom')
+        .doc(chatroom)
+        .collection('message')
+        .orderBy('timestamp', descending: false)
+        .snapshots();
+  }
 
-    String chatroom = ids.join('_');
-
-
-     return db.collection('Chatroom')
-     .doc(chatroom)
-     .collection('message')
-     .orderBy('timestamp',descending: false)
-     .snapshots();
+  String getChatRoomId(String user1, String user2) {
+    List<String> ids = [user1, user2];
+    ids.sort();
+    return ids.join('_');
   }
 }

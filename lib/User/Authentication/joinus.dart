@@ -12,17 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class Joinus extends StatefulWidget {
   const Joinus({Key? key}) : super(key: key);
-  // check(BuildContext context)async{
-  //   SharedPreferences preferences=await SharedPreferences.getInstance();
-  //   String? name=preferences.getString('is login');
-  //   if(name!=null){
-  //     Navigator.push(context,MaterialPageRoute(builder:(context)=>Home()));
-  //   }else
-  //   {
-  //           Navigator.push(context,MaterialPageRoute(builder:(context)=>Getstart()));
-
-  //   }
-  // }
+ 
 
   @override
   State<Joinus> createState() => _JoinusState();
@@ -35,12 +25,14 @@ class _JoinusState extends State<Joinus> {
   final _EmailIdController = TextEditingController();
   final _emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
   final _auth = FirebaseAuth.instance;
-bool obscure=true;
-void toggile(){
-  setState(() {
-    obscure=!obscure;
-  });
-}
+  bool _obscureText = true;
+
+  void _toggleVisibility() {
+    setState(() {
+      _obscureText = !_obscureText;
+    });
+  }
+
   String email = '';
   String password = '';
   Future addfirebase(
@@ -185,13 +177,15 @@ SingleChildScrollView(
                   },
                 ),
                 const SizedBox(height: 20.0),
-                TextFormField(
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  controller: _passwordController,
-                  decoration: InputDecoration(
-                    suffixIcon: IconButton(onPressed:(){
-                      toggile();
-                    },icon: Icon(obscure? Icons.visibility:Icons.visibility_off)),
+ TextFormField(
+          obscureText: _obscureText,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          controller: _passwordController,
+          decoration: InputDecoration(
+            suffixIcon: IconButton(
+              onPressed: _toggleVisibility,
+              icon: Icon(_obscureText ? Icons.visibility_off : Icons.visibility),
+            ),
                     labelText: 'Password',
                     border: OutlineInputBorder(),
                     filled: true,
@@ -237,34 +231,7 @@ SingleChildScrollView(
                     ),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.all(16.0),
-                  child: const Center(
-                    child: Text(
-                      'or\ncontinue with',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20.0),
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      SizedBox(
-                        width: 30.0,
-                        height: 30.0,
-                        child: Image.asset("asset/google.png"),
-                      ),
-                     
-                    ],
-                  ),
-                ),
+                
                 const SizedBox(
                   height: 50.0,
                   child: Center(
