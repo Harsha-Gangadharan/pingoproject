@@ -16,7 +16,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilePage extends StatefulWidget {
-  String id;
+  final String id;
   ProfilePage({Key? key, required this.id}) : super(key: key);
 
   @override
@@ -45,7 +45,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    // String id = auth.currentUser!.uid;
+    final currentUserId = auth.currentUser!.uid;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(183, 225, 56, 132),
@@ -149,7 +149,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     return const Center(child: Text('No data available'));
                   }
                   String imageUrl = data.get('image') ?? '';
-                  String name = data.get('username') ?? 'No Name';
+                  String name = data.get('name') ?? 'No Name';
                   String bio = data.get('bio') ?? 'No Bio';
                   return Column(
                     children: [
@@ -182,11 +182,11 @@ class _ProfilePageState extends State<ProfilePage> {
                                 children: [
                                   Text(
                                     '$postCount',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                         fontSize: 16.0,
                                         fontWeight: FontWeight.bold),
                                   ),
-                                  Text(
+                                  const Text(
                                     'Posts',
                                     style: TextStyle(fontSize: 16.0),
                                   ),
@@ -203,7 +203,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               builder: (context, snapshot) {
                                 if (snapshot.connectionState ==
                                     ConnectionState.waiting) {
-                                  return SizedBox();
+                                  return const SizedBox();
                                 }
                                 if (snapshot.hasData) {
                                   return _buildStatColumn('Followers',
@@ -217,7 +217,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     );
                                   });
                                 } else {
-                                  return SizedBox();
+                                  return const SizedBox();
                                 }
                               }),
                           StreamBuilder<QuerySnapshot>(
@@ -229,7 +229,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               builder: (context, snapshot) {
                                 if (snapshot.connectionState ==
                                     ConnectionState.waiting) {
-                                  return SizedBox();
+                                  return const SizedBox();
                                 }
                                 if (snapshot.hasData) {
                                   return _buildStatColumn('Following',
@@ -243,7 +243,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     );
                                   });
                                 } else {
-                                  return SizedBox();
+                                  return const SizedBox();
                                 }
                               }),
                         ],
@@ -296,44 +296,60 @@ class _ProfilePageState extends State<ProfilePage> {
                     itemBuilder: (context, index) {
                       return GestureDetector(
                         onTap: () {
-                          showDialog(
+                          if (userData[index]["uid"] == currentUserId) {
+                            showDialog(
                               context: context,
                               builder: (context) => AlertDialog(
-                                    title: const Text('Delete'),
-                                    content: const SingleChildScrollView(
-                                      child: ListBody(
-                                        children: <Widget>[
-                                          Text(
-                                              'Would you like to delete your product?'),
-                                        ],
-                                      ),
-                                    ),
-                                    actions: <Widget>[
-                                      TextButton(
-                                        child: const Text('Cancel'),
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                      ),
-                                      TextButton(
-                                        child: const Text('Delete'),
-                                        onPressed: () {
-                                          firestore
-                                              .collection("productdetails").doc(userData[index]["productId"]).delete().then((value){
- Navigator.push(context, MaterialPageRoute(builder: (context) =>  Packages(indexNum: 0,),)); 
-                                              });
-                                        },
-                                      ),
+                                title: const Text('Delete'),
+                                content: const SingleChildScrollView(
+                                  child: ListBody(
+                                    children: <Widget>[
+                                      Text('Would you like to delete your product?'),
                                     ],
-                                  ));
+                                  ),
+                                ),
+                                actions: <Widget>[
+                                  TextButton(
+                                    child: const Text('Cancel'),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                  TextButton(
+                                    child: const Text('Delete'),
+                                    onPressed: () {
+                                      FirebaseFirestore.instance
+                                          .collection("productdetails")
+                                          .doc(userData[index]["productId"])
+                                          .delete()
+                                          .then((value) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) => Packages(
+                                                    indexNum: 0,
+                                                  )),
+                                        );
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'You are not authorized to delete this product.')),
+                            );
+                          }
                         },
                         child: Container(
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
                             image: DecorationImage(
-                              image:
-                                  NetworkImage(userData[index]["productimage"]),
+                              image: NetworkImage(userData[index]["productimage"]),
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -422,7 +438,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           builder: (context) => SellerOrderPage(
                                 uid: widget.id,
                               )));
-                  ;
                 },
               ),
               const SizedBox(height: 20),
@@ -462,7 +477,13 @@ class _ProfilePageState extends State<ProfilePage> {
                           await SharedPreferences.getInstance();
                       await auth.signOut();
                       preferences.clear();
-                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => Getstart(),), (route) => false);
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Getstart(),
+                        ),
+                        (route) => false,
+                      );
                       print('Logout confirmed');
                     },
                     child: const Text('Logout'),
