@@ -37,27 +37,33 @@ class _HomeState extends State<HomePage> {
     isFollowingList = List.generate(10, (index) => false);
     isLikedList = List.generate(10, (index) => false);
   }
+List userCategory = [];
 
-  List userCategory = [];
-  getuserCategory() async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection("useregisteration")
-        .doc(FirebaseAuth.instance.currentUser!.uid)
-        .get();
-    if (snapshot.exists) {
-      userCategory = snapshot.data()!["selected category"];
-      log(userCategory.toString());
-    }
+Future<void> getuserCategory() async {
+  final snapshot = await FirebaseFirestore.instance
+      .collection("useregisteration")
+      .doc(FirebaseAuth.instance.currentUser!.uid)
+      .get();
+  if (snapshot.exists) {
+    userCategory = snapshot.data()!["selected category"] ?? [];
+    log(userCategory.toString());
+  } else {
+    userCategory = [];
+    log('No selected category found');
   }
+}
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> getAllPost() {
-    // getuserCategory();
-    // return FirebaseFirestore.instance.collection("productdetails").snapshots();
+Stream<QuerySnapshot<Map<String, dynamic>>> getAllPost() {
+  if (userCategory.isEmpty) {
+    // Return an empty stream if no category is selected
+    return Stream.empty();
+  } else {
     return FirebaseFirestore.instance
         .collection("productdetails")
-        .where("category", whereIn: List.from(userCategory))
+        .where("category", whereIn: userCategory)
         .snapshots();
   }
+}
 
   Future<DocumentSnapshot<Map<String, dynamic>>> getSelectedUserProfile(
       String id) async {

@@ -18,6 +18,11 @@ class NewPost extends StatefulWidget {
 }
 
 class _NewPostState extends State<NewPost> {
+   bool _isFormValid() {
+    return selectedCategory.isNotEmpty &&
+        ammountController.text.isNotEmpty &&
+        descriptionController.text.isNotEmpty;
+  }
   int _selectedIndex = 0;
   final _auth = FirebaseAuth.instance;
   final ammountController = TextEditingController();
@@ -259,13 +264,21 @@ if(widget.expoId==""){
                 ),
               ),
             ),
-            SizedBox(height: 20),
+           SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    productTable();
+                    if (_isFormValid()) {
+                      productTable();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Please fill all required fields.'),
+                        ),
+                      );
+                    }
                   },
                   child: Text('Submit'),
                 ),

@@ -149,14 +149,29 @@ class _ProfilePageState extends State<ProfilePage> {
                     return const Center(child: Text('No data available'));
                   }
                   String imageUrl = data.get('image') ?? '';
-                  String name = data.get('name') ?? 'No Name';
+                  String name = data.get('username') ?? 'No Name';
                   String bio = data.get('bio') ?? 'No Bio';
                   return Column(
                     children: [
                       CircleAvatar(
-                        radius: 50,
-                        backgroundImage: NetworkImage(imageUrl),
-                      ),
+  radius: 50,
+  backgroundColor: Colors.grey, // Placeholder background color
+  child: imageUrl != null && imageUrl!.isNotEmpty && Uri.parse(imageUrl!).isAbsolute
+      ? ClipOval(
+          child: Image.network(
+            imageUrl!,
+            width: 100,
+            height: 100,
+            fit: BoxFit.cover,
+          ),
+        )
+      : const Icon(
+          Icons.account_circle,
+          size: 100,
+          color: Colors.white,
+        ),
+),
+
                       const SizedBox(height: 16),
                       Text(
                         name,
@@ -366,21 +381,22 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildStatColumn(String label, String value, Function()? onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(label),
-        ],
-      ),
-    );
-  }
+ Widget _buildStatColumn(String label, String value, Function()? onTap) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        Text(label),
+      ],
+    ),
+  );
+}
+
 
   void _showSettingsBottomSheet() {
     showModalBottomSheet(

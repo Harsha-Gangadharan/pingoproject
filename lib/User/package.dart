@@ -132,23 +132,24 @@ class _MyNavState extends State<MyNav> {
           icon: Icon(Icons.card_giftcard,
               color: Color.fromARGB(255, 12, 12, 12)),
         ),
-        BottomNavigationBarItem(
-          label: "Profile",
-          icon: CircleAvatar(
-            radius: 12,
-            backgroundColor: Color.fromARGB(255, 12, 12, 12),
-            child: _imageUrl != null
-                ? ClipOval(
-                    child: Image.network(
-                      _imageUrl!,
-                      width: 24,
-                      height: 24,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : Icon(Icons.account_circle, color: Colors.white),
-          ),
-        ),
+       BottomNavigationBarItem(
+  label: "Profile",
+  icon: CircleAvatar(
+    radius: 12,
+    backgroundColor: Color.fromARGB(255, 12, 12, 12),
+    child: (_imageUrl != null && _imageUrl!.isNotEmpty && Uri.tryParse(_imageUrl!)?.hasAbsolutePath == true)
+        ? ClipOval(
+            child: Image.network(
+              _imageUrl!,
+              width: 24,
+              height: 24,
+              fit: BoxFit.cover,
+            ),
+          )
+        : Icon(Icons.account_circle, color: Colors.white),
+  ),
+),
+
       ],
     );
   }

@@ -110,7 +110,6 @@ class _ReviewPageState extends State<ReviewPage> {
                       ),
                     ],
                   ),
-
                 ],
               ),
             ),
@@ -124,15 +123,12 @@ class _ReviewPageState extends State<ReviewPage> {
                   fit: BoxFit.cover,
                 ),
               ),
-              
             ),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  
-                ],
+                children: [],
               ),
             ),
             StreamBuilder<QuerySnapshot>(
@@ -174,18 +170,26 @@ class _ReviewPageState extends State<ReviewPage> {
                   averageRating /= totalRatings;
                 }
 
-                return Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: RatingSummary(
-                    counter: totalRatings,
-                    average: averageRating,
-                    counterFiveStars: counterFiveStars,
-                    counterFourStars: counterFourStars,
-                    counterThreeStars: counterThreeStars,
-                    counterTwoStars: counterTwoStars,
-                    counterOneStars: counterOneStars,
-                  ),
-                );
+                return totalRatings > 0
+                    ? Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: RatingSummary(
+                          counter: totalRatings,
+                          average: averageRating,
+                          counterFiveStars: counterFiveStars,
+                          counterFourStars: counterFourStars,
+                          counterThreeStars: counterThreeStars,
+                          counterTwoStars: counterTwoStars,
+                          counterOneStars: counterOneStars,
+                        ),
+                      )
+                    : Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: Text(
+                          'No ratings yet',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      );
               },
             ),
             Padding(
@@ -245,7 +249,10 @@ class _ReviewPageState extends State<ReviewPage> {
                     onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => ViewAllReview(productId: widget.productId, sellerId: widget.sellerId,)),
+                          builder: (context) => ViewAllReview(
+                                productId: widget.productId,
+                                sellerId: widget.sellerId,
+                              )),
                     ),
                     child: Text('View All Reviews'),
                   ),

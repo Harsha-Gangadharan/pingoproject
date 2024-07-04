@@ -128,10 +128,10 @@ class _CartPaymentState extends State<CartPayment> {
               child: ElevatedButton(
                 onPressed: () { 
                      
-                  Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => CartSummary(selectedOption: selectedOption)),
-                            );
+                    Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                  builder: (context) => CartSummary(selectedOption: selectedOption)),
+                          (route) => false); 
                             },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 195, 60, 105),
