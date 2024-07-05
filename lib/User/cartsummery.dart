@@ -147,9 +147,10 @@ class _CartSummaryState extends State<CartSummary> {
             'sellerImage': sellerImage,
             'sellerName': sellerName,
             'sellerUid': sellerUid,
+            'Status': 'processing',
             'buyerAddress': {
-              'name': addressData?["address.name"] ?? "",
               'address': {
+                'name': addressData?["address.name"] ?? "",
                 'houseNumber': addressData?["address.houseNumber"] ?? "",
                 'roadAreaColony': addressData?["address.roadAreaColony"] ?? "",
                 'nearFamousPlace':
@@ -157,8 +158,9 @@ class _CartSummaryState extends State<CartSummary> {
                 'city': addressData?["address.city"] ?? "",
                 'state': addressData?["address.state"] ?? "",
                 'pincode': addressData?["address.pincode"] ?? "",
+                 'contactNumber': addressData?["address.contactNumber"] ?? "",
               },
-              'contactNumber': addressData?["address.contactNumber"] ?? "",
+              
             },
             'paymentMode':
                 selectedOption == 0 ? "Cash on Delivery" : "Wallet/UPI",
@@ -177,7 +179,6 @@ class _CartSummaryState extends State<CartSummary> {
       'total': total,
       'orderPlacedDate': FieldValue.serverTimestamp(),
       'deliveryDate': 'within one month',
-      'Status': 'processing',
       'id': docId, // Store the document ID in the document
       'paymentMode': selectedOption == 0 ? "Wallet/UPI" : "Cash on Delivery",
     });

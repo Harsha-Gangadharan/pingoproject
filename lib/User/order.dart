@@ -153,7 +153,7 @@ class OrderListItem extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                  '02th February'),  
+                  'with in one month'),  
             ],
           ),
           const SizedBox(height: 10.0),
@@ -193,19 +193,7 @@ class OrderListItem extends StatelessWidget {
               const Text('Free delivery'),
             ],
           ),
-          const SizedBox(height: 10.0),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  // Handle remove button press
-                },
-                child: const Text('Remove'),
-              ),
-            ],
-          ),
-          
+         
         ],
       ),
     );

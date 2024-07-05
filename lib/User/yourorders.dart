@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'dart:developer';
 
 import 'package:flutter_application_1/User/notification.dart';
+import 'package:flutter_application_1/User/package.dart';
 import 'package:flutter_application_1/model/ordersmodel.dart';
 
 class YourOrderDetails extends StatefulWidget {
@@ -73,11 +74,15 @@ class _YourOrderDetailsState extends State<YourOrderDetails> {
                 Text('Seller Name: ${widget.product['sellerName']}'),
                 Image.network(widget.product['productImage']),
                 Text(
+                    ' userName:: ${widget.product['buyerAddress']['address']['name']}'),
+                Text(
                     'City: ${widget.product['buyerAddress']['address']['city']}'),
                 Text(
                     'Near Famous Place: ${widget.product['buyerAddress']['address']['nearFamousPlace']}'),
                 Text(
                     'PINCODE: ${widget.product['buyerAddress']['address']['pincode']}'),
+                     Text(
+                    ' contactNumber: ${widget.product['buyerAddress']['address']['contactNumber']}'),
                 Text('Payment Mode: ${widget.product['paymentMode']}'),
                 Text('Delivery Date: within one month'),
                 SizedBox(height: 20),
@@ -99,24 +104,34 @@ class _YourOrderDetailsState extends State<YourOrderDetails> {
                     });
                   },
                 ),
-                SizedBox(height: 20),
-                StreamBuilder(
-                  stream: getProductid(),
-                  builder: (context, snapshot) {
+               SizedBox(height: 20),
+StreamBuilder(
+  stream: getProductid(),
+  builder: (context, snapshot) {
+    return ElevatedButton(
+      onPressed: () {
+        // Update the status in Firestore
+        db.collection('cart_summary').doc(widget.id).update({
+          'Status': selectedStatus.toString(),
+        }).then((_) {
+          // Navigate to the desired screen after the update
 
-                     
-                      
-                    return ElevatedButton(
-                      onPressed: () {
-                        db.collection('cart_summary').doc(widget.id).update({
-                          'Status':selectedStatus.toString(),
-                        });
+                          Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                  builder: (context) =>Packages(
+                                        indexNum: 4,
+                                      )),
+                              (route) => false);
+        }).catchError((error) {
+          // Handle any errors here if needed
+          print("Failed to update status: $error");
+        });
+      },
+      child: Text('Update Status'),
+    );
+  },
+),
 
-                      },
-                      child: Text('Update Status'),
-                    );
-                  },
-                ),
                 SizedBox(height: 50,)
               ],
             ),
